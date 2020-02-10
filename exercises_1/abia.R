@@ -26,6 +26,18 @@ abia_filtered_4 <- abia %>%
 abia_filtered_5 <- abia %>%
   filter(Cancelled == 1)
 
+abia_filtered_6 <- abia %>%
+  filter(Dest == "DFW")
+
+abia_filtered_7 <- abia %>%
+  filter(Dest == "SFO")
+
+abia_filtered_8 <- abia %>%
+  filter(Dest == "LAX")
+
+abia_filtered_9 <- abia %>%
+  filter(Dest == "JFK")
+
 
 # show filtered data
 abia_filtered_4
@@ -130,13 +142,90 @@ ggplot(abia_cancelled_by_flight, aes(x=reorder(FlightNum, Cancelled.sum), y=Canc
   coord_flip()
 
 
-# which airline had the longest departure delay when flying out of ABIA?
+# which airline had the longest mean departure delay?
+abia_depDelay_by_carrier = abia %>%
+  group_by(UniqueCarrier)  %>%  # group the data points by unique carrier
+  summarize(DepDelay.mean = mean(DepDelay))  # calculate sum of cancelled flights
+
+ggplot(abia_depDelay_by_carrier, aes(x=reorder(UniqueCarrier, DepDelay.mean), y=DepDelay.mean)) + 
+  geom_bar(stat='identity', fill = "#BF5700") +
+  ylab("Mean Departure Delay") +
+  xlab("Unique Carrier") +
+  coord_flip()
 
 
-
-# which holidays have the most flights out of ABIA?
+# which holidays (weeks) have the most flights out of ABIA?
 
 
 
 # what is the best day of the year to fly out of ABIA? (histogram of number of flights per day/month/season)
 
+
+
+# which month has the longest departure delays?
+abia_depDelay_by_month = abia %>%
+  group_by(Month)  %>%  # group the data points by month
+  summarize(DepDelay.mean = mean(DepDelay))  # calculate a mean distance for each month
+
+ggplot(abia_depDelay_by_month, aes(x=reorder(Month, DepDelay.mean), y=DepDelay.mean)) + 
+  geom_bar(stat='identity', fill = "#BF5700") +
+  ylab("Mean Departure Delay") +
+  xlab("Month") +
+  coord_flip() +
+  scale_y_continuous(limits = c(-500, 500))
+
+
+# incoming flights at DFW over time
+abia_flights_to_dfw = abia_filtered_6 %>%
+  group_by(Month)  %>%  # group the data points by month
+  summarize(NotCancelled.sum = sum(Cancelled == 0))  # calculate sum of non-cancelled flights
+
+ggplot(abia_flights_to_dfw, aes(x=Month, y=NotCancelled.sum)) + 
+  geom_density(stat='identity', fill = "#BF5700") +
+  ylab("Number of Flights") +
+  xlab("Month")
+
+
+# incoming flights at SFO over time
+abia_flights_to_sfo = abia_filtered_7 %>%
+  group_by(Month)  %>%  # group the data points by month
+  summarize(NotCancelled.sum = sum(Cancelled == 0))  # calculate sum of non-cancelled flights
+
+ggplot(abia_flights_to_dfw, aes(x=Month, y=NotCancelled.sum)) + 
+  geom_density(stat='identity', fill = "#BF5700") +
+  ylab("Number of Flights") +
+  xlab("Month")
+
+
+# incoming flights at LAX over time
+abia_flights_to_dfw = abia_filtered_8 %>%
+  group_by(Month)  %>%  # group the data points by month
+  summarize(NotCancelled.sum = sum(Cancelled == 0))  # calculate sum of non-cancelled flights
+
+ggplot(abia_flights_to_dfw, aes(x=Month, y=NotCancelled.sum)) + 
+  geom_density(stat='identity', fill = "#BF5700") +
+  ylab("Number of Flights") +
+  xlab("Month")
+
+
+# incoming flights at JFK over time
+abia_flights_to_dfw = abia_filtered_9 %>%
+  group_by(Month)  %>%  # group the data points by month
+  summarize(NotCancelled.sum = sum(Cancelled == 0))  # calculate sum of non-cancelled flights
+
+ggplot(abia_flights_to_dfw, aes(x=Month, y=NotCancelled.sum)) + 
+  geom_density(stat='identity', fill = "#BF5700") +
+  ylab("Number of Flights") +
+  xlab("Month")
+
+
+# facet number of flights per month by destination
+abia_flights_by_month_to_dest = abia %>%
+  group_by(Month)  %>%  # group the data points by month
+  summarize(NotCancelled.sum = sum(Cancelled == 0))  # calculate sum of non-cancelled flights
+
+ggplot(abia_flights_by_month_to_dest, aes(x=Month, y=NotCancelled.sum)) + 
+  geom_density(stat='identity', fill = "#BF5700") +
+  ylab("Number of Flights") +
+  xlab("Month") +
+  facet_wrap(~ Dest, nrow = 2)
