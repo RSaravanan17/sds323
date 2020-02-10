@@ -2,7 +2,7 @@ library(mosaic)
 library(tidyverse)
 
 # read in data
-afc = read.csv('../data/afc.csv')
+afc = read.csv('./afc.csv')
 
 # simple scatter plot
 plot(Price ~ FoodScore, data = afc)
@@ -26,3 +26,4 @@ resid(lm1) %>% which.min
 
 # the 3rd row, which is...
 afc[3,]
+

@@ -1,6 +1,6 @@
 library(mosaic)
 
-ebola = read.csv("../data/ebola.csv", header=TRUE)
+ebola = read.csv("./ebola.csv", header=TRUE)
 head(ebola)
 
 # total suspected cases over time

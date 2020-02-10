@@ -1,7 +1,7 @@
 library(tidyverse)
 library(mosaic)
 
-utilities = read.csv('../data/utilities.csv')
+utilities = read.csv('./utilities.csv')
 
 # Goal: predict monthly gas bill in terms of temperature
 
