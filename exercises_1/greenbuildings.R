@@ -6,7 +6,7 @@ greenbuildings = read.csv('./data/greenbuildings.csv')
 
 #filter out low occupancy buildings
 gb_modified <- greenbuildings %>%
-  filter(leasing_rate > 10)
+  filter(leasing_rate > 10 & net == 0)
 
 #boxplots of green vs non green housing
 #rent
@@ -41,7 +41,31 @@ ggplot(gb_modified, aes(x = as.factor(green_rating), y = age)) +
 
 #renovated
 
-
 #class a
 
 #class b
+
+
+##SCATTER PLOTS WITH DISTINCT COLORS
+
+#age vs rent
+ggplot(data = gb_modified) +
+  geom_point(mapping=aes(x = age, y = Rent, colour = as.factor(green_rating)))
+
+#size vs rent
+ggplot(data = gb_modified) +
+  geom_point(mapping=aes(x = size, y = Rent, colour = as.factor(green_rating)))
+
+#stories vs rent
+ggplot(data = gb_modified) +
+  geom_point(mapping=aes(x = stories, y = Rent, colour = as.factor(green_rating)))
+
+#cluster rent vs rent
+ggplot(data = gb_modified) +
+  geom_point(mapping=aes(x = cluster_rent, y = Rent, colour = as.factor(green_rating)))
+ggplot(gb_modified, aes(x = as.factor(green_rating), y = cluster_rent)) +
+  geom_boxplot()
+
+
+#correlations
+cor(gb_modified)
