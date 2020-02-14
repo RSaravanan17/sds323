@@ -107,7 +107,7 @@ ggplot(abia_dep_flights, aes(x=Month, y=NotCancelled.sum)) +
   geom_density(stat='identity', fill = "#BF5700") +
   ylab("Number of Flights") +
   xlab("Month") +
-  ggtitle("Flights Departing from AUS by Month") +
+  ggtitle("Flights Departing from AUS by Month in 2008") +
   facet_wrap(~ Dest)
 ```
 **How does flight activity compare at various destinations throughout the year?**
