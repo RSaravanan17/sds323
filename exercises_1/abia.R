@@ -98,73 +98,84 @@ ggplot(data = abia_filtered_2, aes(x = UniqueCarrier, fill = UniqueCarrier)) +
 ##########################################################################################################
 # bar plot of carrier delay by unique carrier
 
-#abia_carrier_delay = abia_filtered_3 %>%
-  #group_by(UniqueCarrier)  %>%  # group the data points by model name
-  #summarize(CarrierDelay.mean = mean(CarrierDelay))  # calculate a mean for each model
+abia_carrier_delay_by_month = abia_filtered_3 %>%
+  group_by(Month, UniqueCarrier)  %>%  # group the data points by model name
+  summarize(CarrierDelay.mean = mean(CarrierDelay))  # calculate a mean for each model
 
-df  <- data.frame(abia$UniqueCarrier, abia$CarrierDelay)
-colnames(df) <- c("UniqueCarrier","CarrierDelay")
-df <- na.omit(df)
-mean_delay_by_carrier <- aggregate(df$CarrierDelay, list(df$UniqueCarrier), mean)
-colnames(mean_delay_by_carrier) <- c("UniqueCarrier", "MeanCarrierDelay")
+abia_carrier_delay_by_month$UniqueCarrierName <- rep(0,nrow(abia_carrier_delay_by_month)) 
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="YV")] <- "Mesa Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="EV")] <- "ExpressJet"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="NW")] <- "Northwest Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="XE")] <- "JetSuiteX"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="UA")] <- "United Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="OH")] <- "PSA Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="DL")] <- "Delta Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="OO")] <- "SkyWest Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="F9")] <- "Frontier Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="B6")] <- "JetBlue"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="US")] <- "US Airways"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="9E")] <- "Endeavor Air"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="AA")] <- "American Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="CO")] <- "Continental Express"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="WN")] <- "Southwest Airlines"
+abia_carrier_delay_by_month$UniqueCarrierName[which(abia_carrier_delay_by_month$UniqueCarrier=="MQ")] <- "American Eagle Airlines"
 
-mean_delay_by_carrier$UniqueCarrierName <- rep(0,nrow(mean_delay_by_carrier)) 
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="YV")] <- "Mesa Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="EV")] <- "ExpressJet"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="NW")] <- "Northwest Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="XE")] <- "JetSuiteX"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="UA")] <- "United Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="OH")] <- "PSA Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="DL")] <- "Delta Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="OO")] <- "SkyWest Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="F9")] <- "Frontier Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="B6")] <- "JetBlue"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="US")] <- "US Airways"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="9E")] <- "Endeavor Air"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="AA")] <- "American Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="CO")] <- "Continental Express"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="WN")] <- "Southwest Airlines"
-mean_delay_by_carrier$UniqueCarrierName[which(mean_delay_by_carrier$UniqueCarrier=="MQ")] <- "American Eagle Airlines"
+abia_carrier_delay_by_month$Month_Name <- rep(0,nrow(abia_carrier_delay_by_month)) 
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==1)] <- "Jan"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==2)] <- "Feb"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==3)] <- "Mar"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==4)] <- "Apr"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==5)] <- "May"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==6)] <- "Jun"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==7)] <- "Jul"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==8)] <- "Aug"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==9)] <- "Sep"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==10)] <- "Oct"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==11)] <- "Nov"
+abia_carrier_delay_by_month$Month_Name[which(abia_carrier_delay_by_month$Month==12)] <- "Dec"
 
-ggplot(mean_delay_by_carrier, aes(x = reorder(UniqueCarrierName, MeanCarrierDelay), y = MeanCarrierDelay, fill = UniqueCarrierName)) + 
+ggplot(abia_carrier_delay_by_month, aes(x = reorder(Month_Name, Month), y = CarrierDelay.mean, fill = UniqueCarrier)) + 
   geom_bar(stat='identity') +
-  ylab("Mean Carrier Delay") +
-  xlab("Unique Carrier") +
+  ylab("Mean Carrier Delay (minutes)") +
+  xlab("Month") +
   ggtitle("Mean Carrier Delay by Unique Carrier in 2008") +
-  coord_flip()
+  coord_flip() +
+  facet_wrap(~UniqueCarrierName)
+
+ggplot(abia_carrier_delay_by_month, aes(x = reorder(Month_Name, Month), y = CarrierDelay.mean, fill = UniqueCarrierName)) + 
+  geom_bar(stat='identity') +
+  ylab("Mean Carrier Delay (minutes)") +
+  xlab("Month") +
+  ggtitle("Mean Carrier Delay by Unique Carrier in 2008")
 
 ##########################################################################################################
 # which month do people fly the farthest?
 
-#abia_month_by_distance = abia %>%
-  #group_by(Month_name)  %>%  # group the data points by month
-  #summarize(Distance.mean = mean(Distance))  # calculate a mean distance for each month
+abia_distance_by_month_and_carrier = abia %>%
+  group_by(UniqueCarrier, Month)  %>%  # group the data points by month
+  summarize(Distance.mean = mean(Distance))  # calculate a mean distance for each month
 
-df  <- data.frame(abia$Month, abia$Distance)
-colnames(df) <- c("Month_Num","Distance")
-df <- na.omit(df)
-mean_distance_monthly <- aggregate(df$Distance, list(df$Month_Num), mean)
-colnames(mean_distance_monthly) <- c("Month_Num", "Mean_Distance")
+abia_distance_by_month_and_carrier$Month_Name <- rep(0,nrow(abia_distance_by_month_and_carrier)) 
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==1)] <- "Jan"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==2)] <- "Feb"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==3)] <- "Mar"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==4)] <- "Apr"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==5)] <- "May"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==6)] <- "Jun"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==7)] <- "Jul"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==8)] <- "Aug"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==9)] <- "Sep"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==10)] <- "Oct"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==11)] <- "Nov"
+abia_distance_by_month_and_carrier$Month_Name[which(abia_distance_by_month_and_carrier$Month==12)] <- "Dec"
 
-mean_distance_monthly$Month_Name <- rep(0,nrow(mean_distance_monthly)) 
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==1)] <- "Jan"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==2)] <- "Feb"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==3)] <- "Mar"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==4)] <- "Apr"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==5)] <- "May"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==6)] <- "Jun"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==7)] <- "Jul"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==8)] <- "Aug"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==9)] <- "Sep"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==10)] <- "Oct"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==11)] <- "Nov"
-mean_distance_monthly$Month_Name[which(mean_distance_monthly$Month_Num==12)] <- "Dec"
-
-ggplot(mean_distance_monthly, aes(x = reorder(Month_Name, Month_Num), y = Mean_Distance, fill = reorder(Month_Name, Month_Num))) + 
+ggplot(abia_distance_by_month_and_carrier, aes(x = reorder(Month_Name, Month), y = Distance.mean)) + 
   geom_bar(stat = 'identity') +
   ylab("Mean Distance Travelled (miles)") +
   xlab("Month") +
-  ggtitle("Mean Distance Traveled by Month in 2008")
+  ggtitle("Mean Distance Traveled by Month in 2008") +
+  facet_wrap(~UniqueCarrier) +
+  scale_y_continuous(limits = c(-500, 2000))
 
 ##########################################################################################################
 # which day of the week do people fly the farthest?
@@ -295,6 +306,19 @@ ggplot(abia_depDelay_by_month, aes(x=reorder(Month, DepDelay.mean), y=DepDelay.m
   xlab("Month") +
   coord_flip() +
   scale_y_continuous(limits = c(-500, 500))
+
+##########################################################################################################
+# flights departing from AUS over time
+abia_dep_flights = abia_filtered_1 %>%
+  group_by(Dest, Month)  %>%  # group the data points by month
+  summarize(NotCancelled.sum = sum(Cancelled == 0))  # calculate sum of non-cancelled flights
+
+ggplot(abia_dep_flights, aes(x=Month, y=NotCancelled.sum)) + 
+  geom_density(stat='identity', fill = "#BF5700") +
+  ylab("Number of Flights") +
+  xlab("Month") +
+  ggtitle("Flights Departing from AUS by Month") +
+  facet_wrap(~ Dest)
 
 ##########################################################################################################
 # incoming flights at DFW over time
