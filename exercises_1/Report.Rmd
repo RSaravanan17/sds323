@@ -14,18 +14,78 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Question 3
 
+After looking at the on-staff “data guru”’s analysis, we conclude that their analysis is not entirely correct, and they fail to take into account various confounding variables that may be better indicators of whether a building will be profitable or not. To begin, we also filtered out the buildings with less than 10% occupancy, but we also filtered out the buildings that had the feature ‘net’ equal to 0. This meant we were removing buildings where the tenant paid for their own utilities because this could skew the rent that they were paying. Next, we looked at various correlation coefficients between different features of the dataset to see if anything was more correlated to the Rent feature than the green rating. We found that ‘cluster_rent’ and ‘electricity_costs’ were very strongly correlated with Rent, with *r*-values of 0.75 and 0.41, respectively. We also found that the *r*-value of green_rating and Rent was only 0.03, indicating a poor correlation between the two. In addition, we created a few plots to identify the effect of confounding variables:
 
+# Age
 
-```{r cars}
-summary(cars)
+```{r age_box, echo=FALSE}
+library(ggplot2) 
+library(mosaic)
+library(tidyverse)
+
+#read in data
+greenbuildings = read.csv('./data/greenbuildings.csv')
+
+#filter out low occupancy buildings
+gb_modified <- greenbuildings %>%
+  filter(leasing_rate > 10 & net == 0)
+
+ggplot(gb_modified, aes(x = as.factor(green_rating), y = age)) +
+  geom_boxplot() +
+  ggtitle("The Age of Green vs Non-Green Buildings") +
+  xlab("Non-Green (0) vs Green (1)") + 
+  ylab("Age") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r age_scatter, echo=FALSE}
+ggplot(data = gb_modified) +
+  geom_point(mapping=aes(x = age, y = Rent, colour = as.factor(green_rating))) +
+  labs(color=guide_legend(title="Green vs Non-Green buildings")) +
+  ggtitle("Rent vs Age of Green vs Non-Green Buildings") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+The first plot shows that green buildings on average tend to be newer. This shows that green buildings could be more expensive and require higher rent costs because they are more premium real estate. The second plot is a scatterplot of all the data points plotted by rent and age, where it is apparent that the green buildings are concentrated towards the left side of the graph, indicating that they are younger.
+
+
+# Cluster Rent
+```{r cluster_box, echo=FALSE}
+ggplot(gb_modified, aes(x = as.factor(green_rating), y = cluster_rent)) +
+  geom_boxplot() +
+  ggtitle("The Cluster Rent of Green vs Non-Green Buildings") +
+  xlab("Non-Green (0) vs Green (1)") + 
+  ylab("Cluster Rent") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r cluster_scatter, echo=FALSE}
+ggplot(data = gb_modified) +
+  geom_point(mapping=aes(x = cluster_rent, y = Rent, colour = as.factor(green_rating))) +
+  labs(color=guide_legend(title="Green vs \nNon-Green buildings")) +
+  ggtitle("Rent vs Cluster Rent of \nGreen vs Non-Green Buildings") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+The plot above shows that when controlled for cluster rent, it seems that green and non-green buildings could potentially be equally profitable. Cluster rent, as mentioned above, has the strongest correlation to rent (evidenced by the plot below), which simply means that the rent of all the buildings in a similar geographic region has the strongest effect on the rent of a building. If we take this variable into account, the rents seem to be equalized.
+
+
+# Electricity Costs
+```{r elec_box, echo=FALSE}
+ggplot(gb_modified, aes(x = as.factor(green_rating), y = Electricity_Costs)) +
+  geom_boxplot() +
+  ggtitle("The Electricity Costs of Green vs Non-Green Buildings") +
+  xlab("Non-Green (0) vs Green (1)") + 
+  ylab("Electricity Costs") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r elec_scatter, echo=FALSE}
+ggplot(data = gb_modified) +
+  geom_point(mapping=aes(x = Electricity_Costs, y = Rent, colour = as.factor(green_rating))) +
+  labs(color=guide_legend(title="Green vs \nNon-Green buildings")) +
+  ggtitle("Rent vs Electricity_Costs of \nGreen vs Non-Green Buildings") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Another potential confounding variable is the electricity costs of the area the building is in, which was mentioned above as having the 2nd highest correlation to rent. The box plot clearly indicates that the median electricity cost in the areas green buildings are built is higher, which could explain the higher rent. The scatter plot also indicates this, with most of the blue dots above the red dots. The plots combined indicate that electricity costs in the area might be a better indicator of rent, especially as electricity costs are intrinsically tied to the concept of green/non-green buildings. 
