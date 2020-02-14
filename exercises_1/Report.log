@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2020.2.14)  14 FEB 2020 04:28
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2020.2.14)  14 FEB 2020 04:31
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -349,7 +349,8 @@ mode.def
 File: l3backend-pdfmode.def 2020-02-03 L3 backend support: PDF mode
 \l__kernel_color_stack_int=\count270
 \l__pdf_internal_box=\box48
-) (./Report.aux)
+)
+No file Report.aux.
 \openout1 = `Report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 111.
@@ -386,7 +387,6 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 LaTeX Info: Redefining \ref on input line 111.
 LaTeX Info: Redefining \pageref on input line 111.
 LaTeX Info: Redefining \nameref on input line 111.
-(./Report.out) (./Report.out)
 \@outlinefile=\write4
 \openout4 = `Report.out'.
 
@@ -518,9 +518,9 @@ ine 188.
 l.197 ... Street) were laid off from their jobs.\n
                                                    
 Here is how much of TeX's memory you used:
- 10528 strings out of 483161
- 153028 string characters out of 5963981
- 389129 words of memory out of 5000000
+ 10522 strings out of 483161
+ 152962 string characters out of 5963981
+ 389034 words of memory out of 5000000
  25364 multiletter control sequences out of 15000+600000
  571949 words of font info for 61 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
