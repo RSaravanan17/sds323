@@ -9,7 +9,13 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+```{r, message = FALSE, warning = FALSE}
+library(ggplot2) 
+library(mosaic)
 ```
 
 ## Question 3
@@ -19,10 +25,6 @@ After looking at the on-staff “data guru”’s analysis, we conclude that the
 # Age
 
 ```{r age_box, echo=FALSE}
-library(ggplot2) 
-library(mosaic)
-library(tidyverse)
-
 #read in data
 greenbuildings = read.csv('./data/greenbuildings.csv')
 
@@ -89,3 +91,9 @@ ggplot(data = gb_modified) +
 ```
 
 Another potential confounding variable is the electricity costs of the area the building is in, which was mentioned above as having the 2nd highest correlation to rent. The box plot clearly indicates that the median electricity cost in the areas green buildings are built is higher, which could explain the higher rent. The scatter plot also indicates this, with most of the blue dots above the red dots. The plots combined indicate that electricity costs in the area might be a better indicator of rent, especially as electricity costs are intrinsically tied to the concept of green/non-green buildings. 
+
+# Amenities and Precipitation
+
+For some variables like amenities and precipitation, as shown above, green buildings generally cost more than non-green buildings. In addition, it seems evident that whether a building has amenities and the average amount of precipitation in the building’s geographic region has little correlation to whether a building’s rent changes with green adjustments. This shows that there are other controlling factors at play that aren't necessarily as simple as green vs non-green buildings.
+
+All in all, we conclude that due to the sheer number of other variables at work here that explain some of the causality and correlation between green vs non-green buildings and higher rent, the analysis in the case study isn't entirely correct and is worth revisiting.
