@@ -1,5 +1,10 @@
 ---
-title: "Report"
+title: "Exercises #1 Report"
+author:
+  - Nikhil Ajjarapu
+  - Nevyn Duarte
+  - Rithvik Saravanan
+date: "February 14, 2020"
 output: pdf_document
 ---
 
