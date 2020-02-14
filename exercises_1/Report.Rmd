@@ -120,7 +120,9 @@ ggplot(abia_flights_to_jfk, aes(x=Month, y=NotCancelled.sum)) +
   ggtitle("Flights by Month to JFK")
 ```
 
-Continuing from the previous figure, we can see that flights to JFK dropped significantly in the months of November and December. While this could be because those are holiday months (i.e Thanksgiving, Christmas, etc.) and less people are traveling to New York for business-related matters, I believe that this phenomenon was due to the financial crisis in 2008. Due to the severe recession and economic downturn in 2008, it is plausible that many people who worked in New York in the business industry (like Wall Street) were laid off from their jobs.\n
+Continuing from the previous figure, we can see that flights to JFK dropped significantly in the months of November and December. While this could be because those are holiday months (i.e Thanksgiving, Christmas, etc.) and less people are traveling to New York for business-related matters, I believe that this phenomenon was due to the financial crisis in 2008. Due to the severe recession and economic downturn in 2008, it is plausible that many people who worked in New York in the business industry (like Wall Street) were laid off from their jobs.
+
+
 
 ```{r abia6, echo=FALSE, fig.width = 10, fig.height = 4}
 # incoming flights at CLE over time
@@ -140,6 +142,7 @@ ggplot(abia_flights_to_cle, aes(x=Month, y=NotCancelled.sum)) +
 
 Another extension of the 3rd figure, we noticed that there were significantly fewer flights to CLE in the months of January, February, and March. Upon further research (https://www.weather.gov/cle/event_2008_notable), we identified that February and March gathered most of the monthly precipitation records for 2008 for Cleveland, Ohio. Accordingly, this density plot shows that there were noticeably fewer flights to CLE in the months of February and March compared to the following months. Due to the inclement weather during these early months, it is logical that fewer flights were scheduled for Cleveland.
 
+\pagebreak
 # Regression practice
 
 Using the data given in `creatinine.csv`, we can plot the values in a scatterplot that shows creatinine clearance rate against age. On this scatterplot, we can fit a linear model as the line of best fit. This linear regression model will allow us to predict creatinine clearance rate given age and vice versa. The scatterplot and the coefficients of the linear model are given below.
