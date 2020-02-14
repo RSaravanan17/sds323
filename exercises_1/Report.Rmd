@@ -10,7 +10,14 @@ output: pdf_document
 
 # Data visualization: flights at ABIA
 
-From the `ABIA.csv` data set, we could observe several interesting patterns in the airline data at ABIA in 2008. Some of the factors that we explored included delay caused by unique carriers, delay caused by destination and destination weather, flight activity over time throughout the year, 
+From the `ABIA.csv` data set, we could observe several interesting patterns in the airline data at ABIA in 2008. Some of the questions that we explored with the data included:
+
+* During which times of the year, if any, does each carrier have significantly increased carrier delay?
+* How does each carrier's delay compare to other carriers for the same month(s)?
+* Is there varied flight activity over time throughout the year?
+* How does flight activity compare at various destinations throughout the year?
+  + Is there monthly variation in flight activity to JFK throughout the year? If so, what could be a potential reason?
+  + Is there monthly variation in flight activity to CLE throughout the year? If so, what could be a potential reason?
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -72,8 +79,9 @@ ggplot(abia_carrier_delay_by_month, aes(x = reorder(Month_Name, Month), y = Carr
   coord_flip() +
   facet_wrap(~UniqueCarrierName)
 ```
+**During which months, if any, does each carrier have significantly increased carrier delay?**
 
-One of the plots that we found interesting is shown above. This figure displays the mean carrier delay by month in 2008 faceted by unique carrier. We can see that prominent airlines such as American Airlines and Southwest Airlines have a relatively constant and low mean carrier delay throughout the year. This is reasonable because they are some of the most dominant carriers at ABIA, so they likely have sufficient staffing and resources to ensure that any flight delays are minimized. By contrast, Mes Airlines has relatively high mean carrier delays throughout the year, with April being the longest mean delay. Since this carrier is less prominent at ABIA, it is logical that they would have a limited number of flight staff and resources, which means they would not be capable of minimizing flight delays. Another interesting point that we notice here is that Delta Airlines had a significant jump in mean carrier delay in the month of April. Upon further research, I learned that there was a major breakdown at ATL (Hartsfield-Jackson Atlanta International Airport), which is the airline hub for Delta Airlines. According to CNN (http://www.cnn.com/2008/TRAVEL/08/26/faa.computer.failure/index.html), Delta Airlines and other ATL-based airlines experienced hours of flight delays after a communications breakdown at a Federal Aviation Administration (FAA) facility in April 2008. This communications breakdown likely caused the significant spike mean delay in April for Delta Airlines, especially since communications issues mean that flights cannot depart until all safety procedures have been completed.
+This figure displays the mean carrier delay by month in 2008 faceted by unique carrier. We can see that prominent airlines such as American Airlines and Southwest Airlines have a relatively constant and low mean carrier delay throughout the year. This is reasonable because they are some of the most dominant carriers at ABIA, so they likely have sufficient staffing and resources to ensure that any flight delays are minimized. By contrast, Mes Airlines has relatively high mean carrier delays throughout the year, with April being the longest mean delay. Since this carrier is less prominent at ABIA, it is logical that they would have a limited number of flight staff and resources, which means they would not be capable of minimizing flight delays. Another interesting point that we notice here is that Delta Airlines had a significant jump in mean carrier delay in the month of April. Upon further research, I learned that there was a major breakdown at ATL (Hartsfield-Jackson Atlanta International Airport), which is the airline hub for Delta Airlines. According to CNN (http://www.cnn.com/2008/TRAVEL/08/26/faa.computer.failure/index.html), Delta Airlines and other ATL-based airlines experienced hours of flight delays after a communications breakdown at a Federal Aviation Administration (FAA) facility in April 2008. This communications breakdown likely caused the significant spike mean delay in April for Delta Airlines, especially since communications issues mean that flights cannot depart until all safety procedures have been completed.
 
 ```{r abia3, echo=FALSE, fig.width = 10, fig.height = 10}
 ggplot(abia_carrier_delay_by_month, aes(x = reorder(Month_Name, Month), y = CarrierDelay.mean, fill = UniqueCarrierName)) + 
@@ -82,10 +90,11 @@ ggplot(abia_carrier_delay_by_month, aes(x = reorder(Month_Name, Month), y = Carr
   xlab("Month") +
   ggtitle("Mean Carrier Delay by Month in 2008")
 ```
+**How does each carrier's delay compare to other carriers for the same month(s)?**
 
 Similar to the previous figure, the above figure displays the total mean carrier delays by month at ABIA in 2008. This figure provides useful information because it shows that April 2008 saw an increase in mean carrier delays for several airlines. Due to the FAA communications breakdown mentioned earlier, it makes sense that flights arriving from and departing to ATL were delayed, which may have propagated the delay to other flights as well. We also notice that the summer holiday months of June, July, and August as well as the winter holiday months of December and January have relatively the same amount of total mean carrier delay. This is reasonable because these months show heavy travel numbers as families will go on vacation, indicating that each of these months deals with approximately the same throughput. Accordingly, the offseason months of roughly February, May, September, October, and November all show lower total mean carrier delay because the have comparatively less throughput during these months since there would be less external variables that could delay flights.
 
-```{r abia4, echo=FALSE, fig.width = 10, fig.height = 10}
+```{r abia4, echo=FALSE, fig.width = 10, fig.height = 10.5}
 # flights departing from AUS over time
 abia_filtered_1 <- abia %>%
   filter(Origin == "AUS")
@@ -101,10 +110,11 @@ ggplot(abia_dep_flights, aes(x=Month, y=NotCancelled.sum)) +
   ggtitle("Flights Departing from AUS by Month") +
   facet_wrap(~ Dest)
 ```
+**How does flight activity compare at various destinations throughout the year?**
 
 Another intriguing figure that we came across (shown above) was showing the number of flights departing from AUS each month in 2008 faceted by destination airport. For airports with close geographic distance (less than 300 miles), we can see that there were a signifiant amount of flights consistently throughout the year. These locations include DFW, DAL, IAH, and HOU. Additionally, the destinations that are hubs for major airlines also had significant numbers of flights throughout the year. For example, American Airlines has hubs in DFW and ORD, Delta Airlines has its hub in ATL, Southwest Airlines has its hub in PHX, and United Airlines has its hub in ORD, all of which show noticeable amounts of flights over 2008. We also acknowledged that other destinations that were more niche locations had seasonal variations in the number of flights. For example, OKC only had a noticeable amount of flights in the early portion of the year, while CLT was more popular in the later months of the year.
 
-```{r abia5, echo=FALSE, fig.width = 10, fig.height = 4}
+```{r abia5, echo=FALSE, fig.width = 10, fig.height = 4.5}
 # incoming flights at JFK over time
 abia_filtered_9 <- abia %>%
   filter(Dest == "JFK")
@@ -117,14 +127,13 @@ ggplot(abia_flights_to_jfk, aes(x=Month, y=NotCancelled.sum)) +
   geom_density(stat='identity', fill = "#BF5700") +
   ylab("Number of Flights") +
   xlab("Month") +
-  ggtitle("Flights by Month to JFK")
+  ggtitle("Flights by Month to JFK from AUS in 2008")
 ```
+**Is there monthly variation in flight activity to JFK throughout the year? If so, what could be a potential reason?**
 
 Continuing from the previous figure, we can see that flights to JFK dropped significantly in the months of November and December. While this could be because those are holiday months (i.e Thanksgiving, Christmas, etc.) and less people are traveling to New York for business-related matters, I believe that this phenomenon was due to the financial crisis in 2008. Due to the severe recession and economic downturn in 2008, it is plausible that many people who worked in New York in the business industry (like Wall Street) were laid off from their jobs.
 
-
-
-```{r abia6, echo=FALSE, fig.width = 10, fig.height = 4}
+```{r abia6, echo=FALSE, fig.width = 10, fig.height = 4.5}
 # incoming flights at CLE over time
 abia_filtered_10 <- abia %>%
   filter(Dest == "CLE")
@@ -137,8 +146,9 @@ ggplot(abia_flights_to_cle, aes(x=Month, y=NotCancelled.sum)) +
   geom_density(stat='identity', fill = "#BF5700") +
   ylab("Number of Flights") +
   xlab("Month") +
-  ggtitle("Flights by Month to CLE")
+  ggtitle("Flights by Month to CLE from AUS in 2008")
 ```
+**Is there monthly variation in flight activity to CLE throughout the year? If so, what could be a potential reason?**
 
 Another extension of the 3rd figure, we noticed that there were significantly fewer flights to CLE in the months of January, February, and March. Upon further research (https://www.weather.gov/cle/event_2008_notable), we identified that February and March gathered most of the monthly precipitation records for 2008 for Cleveland, Ohio. Accordingly, this density plot shows that there were noticeably fewer flights to CLE in the months of February and March compared to the following months. Due to the inclement weather during these early months, it is logical that fewer flights were scheduled for Cleveland.
 
@@ -160,7 +170,7 @@ lm1 = lm(creatclear ~ age, data = creatinine)
 
 ```{r creatinine2, echo=FALSE}
 # simple scatter plot
-plot(creatclear ~ age, data = creatinine, ylab="Creatinine Clearance Rate", xlab="Age", main="Creatinine Clearance Rate vs. Age")
+plot(creatclear ~ age, data = creatinine, ylab="Creatinine Clearance Rate (mL/miunte)", xlab="Age (years)", main="Creatinine Clearance Rate vs. Age")
 
 # plot the regression line
 abline(lm1)
@@ -178,7 +188,7 @@ From the linear regression model, we can also compute the residuals for each of 
 creatinine_res = resid(lm1)
 
 # plot the residual plot
-plot(creatinine$age, creatinine_res, ylab="Residuals", xlab="Age", main="Residual Plot of Creatinine Clearance Rate vs. Age")
+plot(creatinine$age, creatinine_res, ylab="Residuals (mL/minute)", xlab="Age (years)", main="Residual Plot of Creatinine Clearance Rate vs. Age")
 abline(0, 0)
 ```
 
@@ -327,13 +337,13 @@ coef(lm_ped)
 
 We can now see that the coefficients of the linear regression model are 4.720604 and -1.618578. Plugging these values in for $\log (\alpha)$ and $\beta$, respectively, we get $\log (Q) = 4.72 - 1.62 \cdot \log (P)$. By raising both sides to the exponent, we can remove the logarithm on the LHS and solve for $Q$ as $Q = e^{4.72} \cdot P^{-1.62}$. Now that we have solved for $Q$ as a function of $P$, we can plug $Q$ back into our profit equation as $N = (P - c) \cdot e^{4.72} \cdot P^{-1.62}$. Computing the exponent value gives us $N = (P - c) \cdot 112.24 \cdot P^{-1.62}$. Since we know that the per-unit cost $c$ is \$1, we can plot the curve with the equation $N = (P - 1) \cdot 112.24 \cdot P^{-1.62}$.
 
-```{r milk5, echo=FALSE, fig.width=6, fig.height=3}
+```{r milk5, echo=FALSE, fig.width=6, fig.height=2.75}
 curve((x - 1) * 112.24 * x^(-1.62), from = 1, to = 9, xlab = "Price per Unit ($)", ylab = "Net Profit per Day")
 ```
-```{r milk6, echo=FALSE, fig.width=6, fig.height=3}
+```{r milk6, echo=FALSE, fig.width=6, fig.height=2.75}
 curve((x - 1) * 112.24 * x^(-1.62), from = 2, to = 3, xlab = "Price per Unit ($)", ylab = "Net Profit per Day")
 ```
-```{r milk7, echo=FALSE, fig.width=6, fig.height=3}
+```{r milk7, echo=FALSE, fig.width=6, fig.height=2.75}
 curve((x - 1) * 112.24 * x^(-1.62), from = 2.50, to = 2.70, xlab = "Price per Unit ($)", ylab = "Net Profit per Day")
 ```
 
