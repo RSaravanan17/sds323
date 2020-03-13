@@ -112,10 +112,10 @@ error_rate = 1 - accuracy_rate
 cat("The accuracy rate for the baseline KNN regression model is", accuracy_rate)
 cat("The error rate for the baseline KNN regression model is", error_rate)
 
-true_positive_rate = notViral_notViral/(notViral_viral+viral_notViral)
+true_positive_rate = viral_viral/(viral_viral+viral_notViral)
 cat("The true positive rate for the baseline KNN regression model is", true_positive_rate)
 
-false_positive_rate = notViral_viral/(notViral_viral+viral_viral)
+false_positive_rate = notViral_viral/(notViral_viral+notViral_notViral)
 cat("The false positive rate for the baseline KNN regression model is", false_positive_rate)
 
 
@@ -217,10 +217,10 @@ error_rate = 1 - accuracy_rate
 cat("The accuracy rate for the KNN regression model is", accuracy_rate)
 cat("The error rate for the KNN regression model is", error_rate)
 
-true_positive_rate = notViral_notViral/(notViral_viral+viral_notViral)
+true_positive_rate = viral_viral/(viral_viral+viral_notViral)
 cat("The true positive rate for the KNN regression model is", true_positive_rate)
 
-false_positive_rate = notViral_viral/(notViral_viral+viral_viral)
+false_positive_rate = notViral_viral/(notViral_viral+notViral_notViral)
 cat("The false positive rate for the KNN regression model is", false_positive_rate)
 
 
@@ -275,9 +275,9 @@ error_rate = 1 - accuracy_rate
 cat("The accuracy rate for the logistic regression model is", accuracy_rate)
 cat("The error rate for the logistic regression model is", error_rate)
 
-true_positive_rate = notViral_notViral/(notViral_viral+viral_notViral)
+true_positive_rate = viral_viral/(viral_viral+viral_notViral)
 cat("The true positive rate for the logistic regression model is", true_positive_rate)
 
-false_positive_rate = notViral_viral/(notViral_viral+viral_viral)
+false_positive_rate = notViral_viral/(notViral_viral+notViral_notViral)
 cat("The false positive rate for the logistic regression model is", false_positive_rate)
 
