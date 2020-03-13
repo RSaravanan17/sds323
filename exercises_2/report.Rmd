@@ -1,0 +1,783 @@
+---
+title: "SDS 323: Exercises 2 Report"
+author:
+  - Samuel Higgins
+  - Rylan Keniston
+  - Rithvik Saravanan
+date: "March 13, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(mosaic)
+library(tidyverse)
+library(FNN)
+library(foreach)
+
+require(reshape2)
+
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+
+set.seed(1)
+
+sclass = read.csv('./data/sclass.csv')
+data(SaratogaHouses)
+online_news = read.csv('./data/online_news.csv')
+```
+
+# KNN practice
+
+Many car retail companies around the world strive to provide their customers with accurate and relevant market-based pricing information for vehicles. Certain types of car makes, such as Mercedes-Benz, prove to be especially difficult to predict pricing information. In the case of Mercedes-Benz, the Mercedes S class provides a challenging task for predictions because it is a very broad range of sub-models that all have the label "S Class". This category includes vehicles ranging from luxury sedans to high-performance sports cars. Additionally, the individual submodels consist of cars with various different features. Due to this wide variety of factors, retail companies often struggle to provide accurate pricing predictions to consumers for these types of vehicles.\newline
+
+The data that we analyzed for this case includes more than 29,000 Mercedes S Class vehicles. To build our predictive model of price, we focused on three particular variables:\newline
+\newline
+- *trim*: categorical variable for car's trim level, e.g. 350, 63 AMG, etc. The trim is like a sub-model designation.\newline
+- *mileage*: mileage on the car\newline
+- *price*: the sales price in dollars (\$) of the car\newline
+
+In addition to these variables, the data set includes several other useful values, such as:
+
+```{r sclass_head, echo=FALSE}
+head(sclass)
+```
+
+For more information on this data set, here is a summary of its data:
+
+```{r sclass_summary, echo=FALSE}
+summary(sclass)
+```
+
+In this analysis, we are primarily focusing on two trim levels of the Mercedes S Class vehicles: 350 and 65 AMG. On the "Mileage vs. Price for Trim Level 350" plot below, it is interesting to note that these is a sizable gap in the data points in the price range $\$25,000$ to $\$35,000$. This indicates that there were likely very few types of cars in the Mercedes S class with the 350 trim that were sold for this price range, especially since almost all of the data points are either above or below this range. This type of gap is not present for the 65 AMG trim vehicles. This is an important factor because this may affect our KNN model since some data points may have "more distant" $k$ nearest neighbors than other data points, which would skew the price predictions for those data points. Another interesting point from these plots is that the 350 trim data is more dense and concentrated in two distinct price ranges while the 65 AMG trim is less dense and more evenly distributed across the whole price range. An important insight as to why these distinctions occur is that the 350 trim is a middle-level luxury sedan while the 65 AMG trim is a upper-level sports car. This explains why the price range for the 350 trim is significantly lower than that of the 65 AMG trim (up to about \$125,000 vs. up to about \$250,000).
+
+```{r sclass_trim_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold'}
+# focus on 2 trim levels: 350 and 65 AMG
+sclass350 = subset(sclass, trim == '350')
+
+# look at price vs mileage for each trim level
+ggplot(data = sclass350) + 
+  geom_point(mapping = aes(x = mileage, y = price), color='blue') +
+  xlab("Mileage") +
+  ylab("Price") +
+  ggtitle("Mileage vs. Price for Trim Level 350")
+
+sclass65AMG = subset(sclass, trim == '65 AMG')
+
+ggplot(data = sclass65AMG) + 
+  geom_point(mapping = aes(x = mileage, y = price), color='red') +
+  xlab("Mileage") +
+  ylab("Price") +
+  ggtitle("Mileage vs Price for Trim Level 65 AMG")
+```
+
+To identify which $k$ values are better than others for the KNN regression model, we used the root mean square error ($RMSE$) to quantify the quality of the fit between the actual values and the predicted values. $RMSE$ measures the differences between values predicted by a hypothetical model and the observed values. The formula for $RMSE$ is $RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - f(x_i))^2}$.
+
+For our KNN regression models, we followed the standardized procedure of splitting our original data into training and testing sets where $80\%$ of the data was used in training and the remaining $20\%$ of the data was used in testing. For each of the several values of $k$ that we tested ranging between $3$ and $100$, we ran $200$ train/test splits and computed the mean $RMSE$. We ran $200$ train/test splits for each value of $k$ in order to reduce the variation of each $RMSE$ value computed. In order to reduce the Monte Carlo variability, we ran each split numerous times because running a single train/test split could result in vastly different values for the $RMSE$ (and inherently our choice of the optimal $k$ value) for each run. Using these $RMSE$ values, we were able to select the optimal value of $k$ by choosing the $k$ value with the smallest $RMSE$ value.
+
+```{r knn_350, include=FALSE}
+# Make a train-test split
+N_350 = nrow(sclass350)  # number of rows in sclass350
+N_train_350 = floor(0.8*N_350)  # store 80% of the number of rows
+N_test_350 = N_350 - N_train_350  # store the remaining number of rows
+
+# define a helper function for calculating RMSE
+rmse = function(y, ypred) {
+  sqrt(mean(data.matrix((y-ypred)^2)))
+}
+
+
+k_grid = exp(seq(log(3), log(100), length=100)) %>% round %>% unique
+
+knn_values_350 = c(k_grid)
+rmse_knn_350 = c()
+
+# predict a KNN model for each value of k for 3 <= k <= 100 and store RMSE value
+#knn_value_350 <= 100
+for (k_val in knn_values_350) {
+  iterations = 0
+  sum_rmse = 0
+  
+  while (iterations < 200) {
+    # randomly sample a set of data points to include in the training set
+    train_ind_350 = sample.int(N_350, N_train_350, replace=FALSE)
+    
+    # Define the training and testing set
+    D_train_350 = sclass350[train_ind_350,]
+    D_test_350 = sclass350[-train_ind_350,]
+    
+    # Now separate the training and testing sets into features (X) and outcome (y)
+    X_train_350 = select(D_train_350, mileage)
+    y_train_350 = select(D_train_350, price)
+    X_test_350 = select(D_test_350, mileage)
+    y_test_350 = select(D_test_350, price)
+    
+    knn_350 = knn.reg(X_train_350, X_test_350, y_train_350, k=k_val)
+    
+    # make a prediction on the testing set
+    ypred_knn_350 = knn_350$pred
+    
+    # add the current RMSE to the running sum
+    sum_rmse = sum_rmse + rmse(y_test_350, ypred_knn_350)
+    
+    iterations = iterations + 1
+  }
+  
+  # calculate and store the average RMSE values for the prediction
+  rmse_knn_350[which(k_val == knn_values_350)[[1]]] <- (sum_rmse / iterations)
+}
+
+# identify which k value produced the smallest RMSE value for the KNN model
+print(min(rmse_knn_350))
+print(knn_values_350[which.min(rmse_knn_350)])
+
+
+# randomly sample a set of data points to include in the training set
+train_ind_350 = sample.int(N_350, N_train_350, replace=FALSE)
+
+# Define the training and testing set
+D_train_350 = sclass350[train_ind_350,]
+D_test_350 = sclass350[-train_ind_350,]
+
+# Now separate the training and testing sets into features (X) and outcome (y)
+X_train_350 = select(D_train_350, mileage)
+y_train_350 = select(D_train_350, price)
+X_test_350 = select(D_test_350, mileage)
+y_test_350 = select(D_test_350, price)
+
+# run KNN model for optimal K value
+knn_350 = knn.reg(X_train_350, X_test_350, y_train_350, k=knn_values_350[which.min(rmse_knn_350)])
+
+# make a prediction on the testing set
+D_test_350$predictedPrice = knn_350$pred
+```
+
+```{r rmse_k_plot_350, echo=FALSE, fig.width = 10, fig.height = 7, fig.align='center'}
+# plot RMSE vs. K
+RMSEvsK_df <- data.frame(knn_values_350, rmse_knn_350)
+ggplot(data = RMSEvsK_df) + 
+  geom_line(mapping = aes(x = knn_values_350, y = rmse_knn_350), color='red') +
+  xlab("K") +
+  ylab("RMSE") +
+  ggtitle("RMSE vs. K for Trim Level 350")
+```
+
+Fitting a KNN regression model to predict price from mileage for Mercedes S class vehicles with trim 350 over various values of $k$, we have found that the optimal $k$ value is $12$ with a $RMSE$ of approximately $9951.19$. In other words, $k=12$ was the value at which the difference between the actual price and the predicted price was minimal for trim 350. In the plot below, you can see that $k=12$ has the lowest $RMSE$ value out of the $k$ values that were tested.
+
+```{r fitted_model_350, echo=FALSE, fig.width = 10, fig.height = 7, fig.align='center'}
+# plot of the fitted model for optimal value of K on testing set
+ggplot(data = D_test_350) + 
+  geom_point(mapping = aes(x = mileage, y = price), color='blue') +
+  geom_line(mapping = aes(x = mileage, y = predictedPrice), color='red') +
+  xlab("Mileage (mi)") +
+  ylab("Price ($)") +
+  ggtitle("Fitted Model of KNN on Trim Level 350 on Testing Set")
+```
+
+Fitting this KNN regression model on a $20\%$ testing set for the optimal $k=12$, we can see that this model provides a reasonably accurate price prediction for the 350 trim of Mercedes S class vehicles. From this fitted model, we can see that there is some thrashing in the price range of $\$25,000$ to $\$35,000$, as mentioned earlier. Since the data points are more spread out in this area, it is reasonable that some predictions in this range do not follow a noticeable pattern as they do in prices outside of this range. This is because the nearest neighbors for data points in this price range are "farther" than that of data points in the other price ranges.
+
+```{r knn_65AMG, include=FALSE}
+# Make a train-test split
+N_65AMG = nrow(sclass65AMG)  # number of rows in sclass350
+N_train_65AMG = floor(0.8*N_65AMG)  # store 80% of the number of rows
+N_test_65AMG = N_65AMG - N_train_65AMG  # store the remaining number of rows
+
+# define a helper function for calculating RMSE
+rmse = function(y, ypred) {
+  sqrt(mean(data.matrix((y-ypred)^2)))
+}
+
+
+k_grid = exp(seq(log(3), log(100), length=100)) %>% round %>% unique
+
+knn_values_65AMG = c(k_grid)
+rmse_knn_65AMG = c()
+
+# predict a KNN model for each value of k for 3 <= k <= 100 and store rmse value
+for (k_val in knn_values_65AMG) {
+  iterations = 0
+  sum_rmse = 0
+  
+  while (iterations < 200) {
+    # randomly sample a set of data points to include in the training set
+    train_ind_65AMG = sample.int(N_65AMG, N_train_65AMG, replace=FALSE)
+    
+    # Define the training and testing set
+    D_train_65AMG = sclass65AMG[train_ind_65AMG,]
+    D_test_65AMG = sclass65AMG[-train_ind_65AMG,]
+    
+    # Now separate the training and testing sets into features (X) and outcome (y)
+    X_train_65AMG = select(D_train_65AMG, mileage)
+    y_train_65AMG = select(D_train_65AMG, price)
+    X_test_65AMG = select(D_test_65AMG, mileage)
+    y_test_65AMG = select(D_test_65AMG, price)
+    
+    knn_65AMG = knn.reg(X_train_65AMG, X_test_65AMG, y_train_65AMG, k=k_val)
+    
+    # make a prediction on the testing set
+    ypred_knn_65AMG = knn_65AMG$pred
+    
+    # add the current rmse to the running sum
+    sum_rmse = sum_rmse + rmse(y_test_65AMG, ypred_knn_65AMG)
+    
+    iterations = iterations + 1
+  }
+  
+  # calculate and store the average rmse values for the prediction
+  rmse_knn_65AMG[which(k_val == knn_values_65AMG)[[1]]] <- (sum_rmse / iterations)
+}
+
+# identify which k value produced the smallest rmse value for the KNN model
+print(min(rmse_knn_65AMG))
+print(knn_values_65AMG[which.min(rmse_knn_65AMG)])
+
+
+# randomly sample a set of data points to include in the training set
+train_ind_65AMG = sample.int(N_65AMG, N_train_65AMG, replace=FALSE)
+
+# Define the training and testing set
+D_train_65AMG = sclass65AMG[train_ind_65AMG,]
+D_test_65AMG = sclass65AMG[-train_ind_65AMG,]
+
+# Now separate the training and testing sets into features (X) and outcome (y)
+X_train_65AMG = select(D_train_65AMG, mileage)
+y_train_65AMG = select(D_train_65AMG, price)
+X_test_65AMG = select(D_test_65AMG, mileage)
+y_test_65AMG = select(D_test_65AMG, price)
+
+# run KNN model for optimal K value
+knn_65AMG = knn.reg(X_train_65AMG, X_test_65AMG, y_train_65AMG, k=knn_values_65AMG[which.min(rmse_knn_65AMG)])
+
+# make a prediction on the testing set and it to the data set
+D_test_65AMG$predictedPrice = knn_65AMG$pred
+```
+
+```{r rmse_k_plot_65AMG, echo=FALSE, fig.width = 10, fig.height = 7, fig.align='center'}
+# plot rmse vs. K
+rmsevsK_65AMG_df <- data.frame(knn_values_65AMG, rmse_knn_65AMG)
+ggplot(data = rmsevsK_65AMG_df) + 
+  geom_line(mapping = aes(x = knn_values_65AMG, y = rmse_knn_65AMG), color='red') +
+  xlab("K") +
+  ylab("RMSE") +
+  ggtitle("RMSE vs. K for Trim Level 65 AMG")
+```
+
+Fitting a KNN regression model to predict price from mileage for Mercedes S class vehicles with trim 65 AMG over various values of $k$, we have found that the optimal $k$ value is $10$ with a $RMSE$ of approximately $20788.64$. In other words, $k=10$ was the value at which the difference between the actual price and the predicted price was minimal for trim 65 AMG. In the plot below, you can see that $k=10$ has the lowest $RMSE$ value out of the $k$ values that were tested.
+
+```{r fitted_model_65AMG, echo=FALSE, fig.width = 10, fig.height = 7, fig.align='center'}
+# plot of the fitted model for optimal value of K on testing set
+ggplot(data = D_test_65AMG) + 
+  geom_point(mapping = aes(x = mileage, y = price), color='blue') +
+  geom_line(mapping = aes(x = mileage, y = predictedPrice), color='red') +
+  xlab("Mileage (mi)") +
+  ylab("Price ($)") +
+  ggtitle("Fitted Model of KNN on Trim Level 65 AMG on Testing Set")
+```
+
+Fitting this KNN regression model on a $20\%$ testing set for the optimal $k=10$, we can see that this model also provides a reasonably accurate price prediction for the 65 AMG of Mercedes S class vehicles. This particular testing set has some outliers with very low mileage and high price as well as some outliers with very high mileage and low price. This KNN model still shows an accurate fitted line because the neighbors to these outliers help shape the regression line.
+
+
+## Conclusion
+#### How does the optimal KNN regression model for trim 350 compare to that for trim 65 AMG?
+
+After running KNN regression on both Mercedes S class vehicles with trim 350 and trim 65 AMG, we can see that the optimal $k$ value is larger for trim 350 ($12 > 10$). This indicates that the trim 350 data set regression model needed more nearest neighbors compared to trim 65 AMG. This is logical because the trim 350 data values  are more dense over the whole range but they are concentrated in two clearly defined price ranges. Since the trim 65 AMG data values are less dense and more evenly spread out throughout the range of prices, the KNN regression model required fewer nearest neighbors to make an accurate prediction for price. However, trim 65 AMG has a larger $RMSE$ value ($20788.64 > 9951.19$). This indicates that the regression model for trim 350 is a better fit than the regression model for trim 65 AMG. This is reasonable because the regression model for trim 350 utilized more nearest neighbors than the regression model for 65 AMG, resulting in predictions that were closer to the actual prices. Since the 65 AMG trim is a type of higher-end sports car while the 350 trim is a more middle-range luxury sedan, it is rational that the 65 AMG trim data is more spread out and more sparse compared to the 350 trim, which is more dense and contains more overall data points.
+
+
+
+# Saratoga house prices
+
+Another type of price prediction that is very useful and important in our society is predicting house prices. Many housing retail and leasing companies use regression and other types of models to predict the estimated market rate for houses based on various features. For example, we could use number of rooms, utility status, fuel system, average income of residents in neighboring houses, etc. to help predict the market rate price for a house.
+
+The data that we analyzed for this case includes more than 1500 houses and several of their features, including number of rooms, age of the house, living area, and percentage of neighboring residents with a college degree, among other important factors (shown below).
+
+```{r saratoga_head, echo=FALSE}
+head(SaratogaHouses)
+```
+
+For more information on this data set, here is a summary of its data:
+
+```{r saratoga_summary, echo=FALSE}
+summary(SaratogaHouses)
+```
+
+To identify which variables and interactions produced better price predictions, we used the root mean square error ($RMSE$) to quantify the quality of the fit between the actual values and the predicted values for each model (similar to the previous problem). For reference, the formula we used to calculate the $RMSE$ is $RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - f(x_i))^2}$.
+
+For our KNN regression models, we followed the same standardized procedure of splitting our original data into training and testing sets where $80\%$ of the data was used in training and the remaining $20\%$ of the data was used in testing. For each of the several values of $k$ that we tested ranging between $3$ and $100$, we ran $200$ train/test splits and computed the mean $RMSE$. We ran $200$ train/test splits for each value of $k$ in order to reduce the variation of each $RMSE$ value computed. In order to reduce the Monte Carlo variability, we ran each split numerous times because running a single train/test split could result in vastly different values for the $RMSE$ (and inherently our choice of the optimal $k$ value) for each run. Using these $RMSE$ values, we were able to select the optimal value of $k$ by choosing the $k$ value with the smallest $RMSE$ value.
+
+```{r saratoga_lin_models, include=FALSE}
+# easy averaging over train/test splits
+n = nrow(SaratogaHouses)
+n_train = round(0.8*n)  # round to nearest integer
+n_test = n - n_train
+
+# loop for 100 iterations
+rmse_vals = do(200)*{
+  # re-split into train and test cases with the same sample sizes
+  train_cases = sample.int(n, n_train, replace=FALSE)
+  test_cases = setdiff(1:n, train_cases)
+  
+  saratoga_train = SaratogaHouses[train_cases,]
+  saratoga_test = SaratogaHouses[test_cases,]
+  
+  # Fit to the training data
+  lm1 = lm(price ~ lotSize + bedrooms + bathrooms, data = saratoga_train)
+  lm2 = lm(price ~ . - sewer - waterfront - landValue - newConstruction, data = saratoga_train)
+  lm3 = lm(price ~ (. - sewer - waterfront - landValue - newConstruction)^2, data = saratoga_train)
+  lmBeast = lm(price ~ (livingArea * bedrooms * bathrooms * rooms) + (heating * centralAir) + (fuel + pctCollege), data = saratoga_train)
+  
+  # Predictions out of sample
+  yhat_test1 = predict(lm1, saratoga_test)
+  yhat_test2 = predict(lm2, saratoga_test)
+  yhat_test3 = predict(lm3, saratoga_test)
+  yhat_testBeast = predict(lmBeast, saratoga_test)
+  
+  c(rmse(saratoga_test$price, yhat_test1),
+    rmse(saratoga_test$price, yhat_test2),
+    rmse(saratoga_test$price, yhat_test3),
+    rmse(saratoga_test$price, yhat_testBeast))
+}
+
+rmse_vals
+colMeans(rmse_vals)
+boxplot(rmse_vals)
+print(colMeans(rmse_vals)[4] - colMeans(rmse_vals)[2])
+
+extractAIC(lm1)
+extractAIC(lm2)
+extractAIC(lm3)
+extractAIC(lmBeast)
+```
+
+``` {r saratoga_knn_model, include=FALSE}
+k_grid = exp(seq(log(1), log(100), length=100)) %>% round %>% unique
+
+lowest_mean_rsme = 9999999
+all_k_rmse = c()
+
+# average the RMSE for each k over 100 train/test splits
+err_grid = foreach(k = k_grid,  .combine='c') %do% {
+  out = do(200)*{
+    n = nrow(SaratogaHouses)
+    
+    n_train = round(0.8*n)
+    n_test = n - n_train
+    
+    # select instances to be included in the training and testing sets
+    train_cases = sample.int(n, n_train, replace=FALSE)
+    test_cases = setdiff(1:n, train_cases)
+    
+    # separate the instances for training and testing sets
+    training_set = SaratogaHouses[train_cases,]
+    testing_set = SaratogaHouses[test_cases,]
+    
+    # separate X and y for training and testing sets
+    X_train = model.matrix(price ~ (. - heating - fuel - sewer - waterfront - newConstruction - centralAir) - 1, data = training_set)
+    X_test = model.matrix(price ~ (. - heating - fuel - sewer - waterfront - newConstruction - centralAir) - 1, data = testing_set)
+    y_train = training_set$price
+    y_test = testing_set$price
+    
+    # scale the training and testing set features
+    scale_factors = apply(X_train, 2, sd)
+    X_train_sc = scale(X_train, scale = scale_factors)
+    X_test_sc = scale(X_test, scale = scale_factors)
+    
+    # Fit KNN model and calculate RMSE
+    knn_model = knn.reg(train = X_train_sc, test = X_test_sc, y_train, k = k)
+    rmse(y_test, knn_model$pred)
+  }
+  
+  mean_rsme = mean(out$result)
+  
+  if (mean_rsme < lowest_mean_rsme) {
+    all_k_rmse <- out$result
+    lowest_mean_rsme = mean_rsme
+  }
+  
+  mean_rsme
+}
+
+# identify which k produced the smallest rmse value for the KNN model
+print(min(err_grid))
+print(k_grid[which.min(err_grid)])
+
+rmse_vals[5] <- all_k_rmse
+
+colnames(rmse_vals) = c("Linear Regression Model #1", "Linear Regression Model #2", "Linear Regression Model #3", "Our Linear Regression Model", "Our KNN Regression Model")
+```
+
+```{r echo=FALSE}
+```
+
+To help us select factors and interactions that produced more accurate regression models, we first looked at the $p$-value of the first 3 basic linear models that were provided. We observed that the first linear regression model showed that number of bedrooms and bathrooms were factors that facilitated predicting the house market rate price. We also noticed that the second linear regression model showed that the number of rooms and the percentage of residents in the neighborhood with a college degree were significant factors that made the prediction more accurate. We then took into account that the third linear regression model showed that the living area of the house (in sqaure feet) was a primary factor in price prediction. In addition to this, we also analyzed the Akaike information criterion (AIC) values of each of the regression models to help us decide which ones were useful to consider. The AIC is an estimator of out-of-sample prediction error and thereby relative quality of statistical models for a given set of data by dealing with the risks of overfitting and underfitting.
+
+After performing this analysis to select some of our variables of interest, we then tried various combinations of these variables and interactions between them in a systematic manner. We kept track of the $RMSE$ values produced from the linear regression of each of these combinations of variables and interatcions. Our final linear regression model took all pairwise interactions between living area of the house, number of bedrooms, number of bathrooms, and total number of rooms in addition to all pairwise interactions between heating system type and central air conditioning as well as the individual variables of fuel system type and percentage of residents in the neighborhood with a college degree.
+
+In other words, we found it plausible that the effect of the number of bedrooms and bathrooms on price depended on the living area of the house and vice versa. The intuition behind this idea is that houses with more sqaure feet in living area typically have more bedrooms and bathrooms. This also shows that the living area of the house predicts price based on the number of bedrooms and bathrooms. For example, if two houses $A$ and $B$ have an equal square feet of living area but $A$ has fewer bedrooms and bathrooms than $B$, then it is reasonable that the market rate price for house $A$ is less than that of house $B$. Similarly, we found that the interactions between heating system and air conditioning predicted the market rate price for a house because the presence of one and not the other typically resulted in a lower market rate than if both were present.
+
+```{r saratoga_rmse_k_plot, echo=FALSE, fig.width = 10, fig.height = 7, fig.align='center'}
+# plot rmse vs. K
+RMSEvsK_Saratoga_df <- data.frame(k_grid, err_grid)
+ggplot(data = RMSEvsK_Saratoga_df) + 
+  geom_line(mapping = aes(x = k_grid, y = err_grid), color='red') +
+  xlab("K") +
+  ylab("RMSE") +
+  ggtitle("RMSE vs. K for Optimal KNN Model for Predicting Saratoga House Prices")
+```
+
+For our KNN model, we used the standardized process to identify the optimal value of $k$ for the variables and implicit interactions that we used by selecting the $k$ value with the smallest $RMSE$. Since the KNN model can account for interactions between any variables used, we simpy had to only include the variables that we were interested in using for prediction (the same unqiue variables that we used in our linear regression model). Above, we have plotted the $RMSE$ value for each $k$ value that we tested.
+
+```{r echo=FALSE}
+cat("Mean RMSE of Linear Regression Model #1:", colMeans((rmse_vals[1])), "\n")
+cat("Mean RMSE of Linear Regression Model #2:", colMeans((rmse_vals[2])), "\n")
+cat("Mean RMSE of Linear Regression Model #3:", colMeans((rmse_vals[3])), "\n")
+cat("Mean RMSE of our Linear Regression Model:", colMeans((rmse_vals[4])), "\n")
+cat("Mean RMSE of our KNN Regression Model:", colMeans((rmse_vals[5])), "\n")
+```
+
+The individual mean $RMSE$ values, which we computed in order to allow us to compare models, for each of the regression models that we analyzed are shown above. We can see that Linear Regression Model #2 has a better fit than Linear Regression Models #1 and #3. We also observe that our Linear Regression Model produced a better fit than Linear Regression Model #2 by approximately $1000$ units. Our final KNN Regression Model was the best fit of all of the models that we tested. Our KNN Regression Model produced a better fit than Linear Regression Model #2 by approximately $5000$ units.
+
+```{r saratoga_rmse_boxplot_outliers, echo=FALSE, fig.width = 10, fig.height = 5, fig.align='center'}
+# boxplots of the rmses for each regression model (with and without outliers)
+ggplot(data = melt(rmse_vals), aes(x = variable, y = value, fill = 'orange')) + 
+  geom_boxplot(outlier.colour="grey", outlier.shape=16, outlier.size=2, notch=FALSE) + 
+  theme(legend.position="none") + 
+  xlab("Regression model") + 
+  ylab("RMSE") + 
+  ggtitle("RMSEs by Regression Model (With Outliers)")
+```
+
+```{r saratoga_rmse_boxplot_noOutliers, echo=FALSE, fig.width = 10, fig.height = 5, fig.align='center'}
+ggplot(data = melt(rmse_vals), aes(x = variable, y = value, fill='orange')) + 
+  geom_boxplot(outlier.colour="grey", outlier.shape=NA, notch=FALSE) +
+  scale_y_continuous(limits=c(50000,100000), breaks=seq(50000,100000,10000), expand = c(0, 0)) + 
+  theme(legend.position="none") + 
+  xlab("Regression model") + 
+  ylab("RMSE") + 
+  ggtitle("RMSEs by Regression Model (Without Outliers)")
+```
+
+The above boxplots show more detailed information regarding the $RMSE$ values for each of the regression models. We have provided the boxplots with and without outliers in order to highlight the extremity of the outliers for Linear Regression Model #3 as well as the noticeable decrease in average $RMSE$ for our Linear Regression Model and even more so for our KNN Regression Model.
+
+
+## Conclusion
+#### Which variables and interactions accurately predict market values for properties?
+
+From the perspective of a local taxing authority looking to form predicted market values for properties in order to know how much to tax them, we know that we would like to pick the best combination of variables and interactions with the best regression model in order to make the most accurate price predictions. From our data analysis, we have shown that the best predictions for housing market rates came from the using a KNN regression model taking into account all variables (and implicitly the interactions between these variables) except for heating system type, fuel system type, sewer, waterfront, new  construction, and central air conditioning. Specifically, we performed various types of data anlysis on the provided variables in the data set in order to understand that the most significant variables to help in the prediction of market rate prices for houses include the living area of a house, the number of bedrooms, bathrooms, and total rooms, the air conditioning system, and the percent of residents in the neighborhood with a college degree. The interactions that we found between living area in square feet and the number of bedrooms and bathrooms is also important to take into account, as explained above.
+
+
+
+# Predicting when articles go viral
+
+Another interesting prediction that we can make is whether or not a given article will go viral. With the rise of social media in our society, this is a insightful prediction to make because it will provide us with a better understanding of what kind of information people are more willing to consume and circulate within their social groups.
+
+The data that we analyzed for this case includes approximately 40,000 online articles published by Mashable during 2013 and 2014. The target variable in this data set is *shares*, which is the number of times that an articles is shared online. For this case, we consider an article to be 'viral' if it has more than $1,400$ shares. The other variables are article-level features: length of the headline, length of the article, and how positive or negative the "sentiment" of the article was, among many other specific technical features.
+
+```{r online_head, echo=FALSE}
+head(online_news)
+```
+
+For more information on this data set, here is a summary of its data:
+
+```{r online_summary, echo=FALSE}
+summary(online_news)
+```
+
+First, we will compute a baseline KNN model that will predict 'not viral' for every instance. Since we will be producing more useful regression models, it is important to have a baseline regression model to compare with to indicate whether the regression models we develop are truly useful. The confusion matrix and the accuracy rate, error rate, true positive rate, and false positive rate are shown below for the baseline KNN regression model.
+
+```{r online_baseline_knn_model, include=FALSE}
+### Baseline KNN Model ###
+library(foreach)
+
+n = nrow(online_news)
+n_train = round(0.8*n)
+n_test = n - n_train
+
+# k values to try out
+k_grid = exp(seq(log(1), log(100), length=100)) %>% round %>% unique
+#k_grid = c(1, 3, 5, 7, 9, 11)
+k_values = c(k_grid)
+percentIncorrect_k = c()
+final_confusion_matrix_knn = c()
+min_percentIncorrect = 9999999
+
+# for each k value, store the average percent incorrect
+for (k_val in k_values) {
+  iterations = 0
+  sum_percentError = 0
+  
+  # average the percent incorrect for k over 100 iterations
+  while (iterations < 100) {
+    # select instances to be included in the training and testing sets
+    train_cases = sample.int(n, n_train, replace=FALSE)
+    test_cases = setdiff(1:n, train_cases)
+    
+    # separate the instances for training and testing sets
+    training_set = online_news[train_cases,]
+    testing_set = online_news[test_cases,]
+    
+    # separate X and y for training and testing sets
+    X_train = model.matrix(shares ~ 1, data = training_set)
+    X_test = model.matrix(shares ~ 1, data = testing_set)
+    y_train = training_set$shares
+    y_test = testing_set$shares
+    
+    y_test_viral = ifelse(y_test > 1400, "Viral", "Not viral")
+    
+    # scale the training and testing set features
+    #scale_factors = apply(X_train, 2, sd)
+    #X_train_sc = scale(X_train, scale = scale_factors)
+    #X_test_sc = scale(X_test, scale = scale_factors)
+    
+    # Fit KNN model and calculate percent incorrect
+    knn_model = knn.reg(train = X_train, test = X_test, y_train, k = k_val)
+    knn_model$predViral = ifelse(knn_model$pred > 1400, "Viral", "Not viral")
+    
+    confusion_table = table(Actual = y_test_viral, Predicted = knn_model$predViral)
+    
+    # calculate perent error
+    percentIncorrect = (sum(y_test_viral != knn_model$predViral) / length(y_test_viral))
+    
+    # add the current rmse to the running sum
+    sum_percentError = sum_percentError + percentIncorrect
+    
+    iterations = iterations + 1
+  }
+  
+  # calculate and store the percent error for the prediction
+  percentIncorrect_k[which(k_val == k_values)[[1]]] <- (sum_percentError / iterations)
+  
+  if ((sum_percentError / iterations) < min_percentIncorrect) {
+    final_confusion_matrix_knn = confusion_table
+    min_percentIncorrect = (sum_percentError / iterations)
+  }
+}
+
+# identify which k value produced the smallest rmse value for the KNN model
+print(min(percentIncorrect_k))
+print(k_values[which.min(percentIncorrect_k)])
+print(final_confusion_matrix_knn)
+```
+
+```{r online_confusion_matrix_baseline_knn, echo=FALSE}
+viral_viral = ifelse(is.na(final_confusion_matrix_knn[4]), 0, final_confusion_matrix_knn[4])
+notViral_viral = ifelse(is.na(final_confusion_matrix_knn[3]), 0, final_confusion_matrix_knn[3])
+viral_notViral = ifelse(is.na(final_confusion_matrix_knn[2]), 0, final_confusion_matrix_knn[2])
+notViral_notViral = ifelse(is.na(final_confusion_matrix_knn[1]), 0, final_confusion_matrix_knn[1])
+
+cat("            Predicted")
+cat("Actual        Viral        Not viral")
+cat("  Viral      ", viral_viral, "       ", viral_notViral)
+cat("  Not viral  ", notViral_viral, "       ", notViral_notViral)
+```
+
+```{r online_baseline_knn_percents, echo=FALSE}
+accuracy_rate = (viral_viral + notViral_notViral)/(viral_viral + notViral_viral + viral_notViral + notViral_notViral)
+error_rate = 1 - accuracy_rate
+cat("The accuracy rate for the baseline KNN regression model is", accuracy_rate)
+cat("The error rate for the baseline KNN regression model is", error_rate)
+
+true_positive_rate = viral_viral/(viral_viral+viral_notViral)
+cat("The true positive rate for the baseline KNN regression model is", true_positive_rate)
+
+false_positive_rate = notViral_viral/(notViral_viral+notViral_notViral)
+cat("The false positive rate for the baseline KNN regression model is", false_positive_rate)
+```
+
+To identify which variables and interactions produced better price predictions for our optimal KNN regression model, we used the root mean square error ($RMSE$) to quantify the quality of the fit between the actual values and the predicted values for each model (similar to the previous problem). For reference, the formula we used to calculate the $RMSE$ is $RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - f(x_i))^2}$.
+
+For our KNN regression models, we followed the same standardized procedure of splitting our original data into training and testing sets where $80\%$ of the data was used in training and the remaining $20\%$ of the data was used in testing. For each of the several values of $k$ that we tested ranging between $3$ and $100$, we ran $100$ train/test splits and computed the mean $RMSE$. We ran $100$ train/test splits for each value of $k$ in order to reduce the variation of each $RMSE$ value computed. In order to reduce the Monte Carlo variability, we ran each split numerous times because running a single train/test split could result in vastly different values for the $RMSE$ (and inherently our choice of the optimal $k$ value) for each run. Using these $RMSE$ values, we were able to select the optimal value of $k$ by choosing the $k$ value with the smallest $RMSE$ value.
+
+For this KNN regression model, we intended to initially predict the number of shares for each instance in the testing set, and then threshold the predicted value as 'viral' or 'not viral'. In order to develop a more useful KNN regression model, we took a similar approach as the previous exercise where we verified the usefulness of specific variables in linear regression models with their *p*-values. This helped us identify several variables that could help predict shares, including the length of the title and the article, the sentiment of the article, the day of the week it was posted on, etc. The confusion matrix and the accuracy rate, error rate, true positive rate, and false positive rate are shown below for our optimal KNN regression model.
+
+```{r online_knn_model, include=FALSE}
+# threshold on shares > 1400
+online_news$viral = (online_news$shares > 1400)
+
+viral = subset(online_news, viral == "TRUE")
+dim(viral)
+
+not_viral = subset(online_news, viral == "FALSE")
+dim(not_viral)
+
+# define a helper function for calculating RMSE
+rmse = function(y, ypred) {
+  sqrt(mean(data.matrix((y-ypred)^2)))
+}
+
+
+### KNN Model ###
+library(foreach)
+
+n = nrow(online_news)
+n_train = round(0.8*n)
+n_test = n - n_train
+
+# k values to try out
+k_grid = exp(seq(log(1), log(100), length=100)) %>% round %>% unique
+#k_grid = c(1, 3, 5, 7, 9, 11)
+k_values = c(k_grid)
+percentIncorrect_k = c()
+final_confusion_matrix_knn = c()
+min_percentIncorrect = 9999999
+
+# for each k value, store the average percent incorrect
+for (k_val in k_values) {
+  iterations = 0
+  sum_percentError = 0
+  
+  # average the percent incorrect for k over 100 iterations
+  while (iterations < 100) {
+    # select instances to be included in the training and testing sets
+    train_cases = sample.int(n, n_train, replace=FALSE)
+    test_cases = setdiff(1:n, train_cases)
+    
+    # separate the instances for training and testing sets
+    training_set = online_news[train_cases,]
+    testing_set = online_news[test_cases,]
+    
+    # separate X and y for training and testing sets
+    X_train = model.matrix(shares ~ (n_tokens_title + n_tokens_content + average_token_length + num_keywords
+                                     + avg_positive_polarity + global_rate_positive_words + global_rate_negative_words
+                                     + title_subjectivity + title_sentiment_polarity + self_reference_min_shares
+                                     + self_reference_max_shares + self_reference_avg_sharess + weekday_is_monday
+                                     + weekday_is_tuesday + weekday_is_wednesday + weekday_is_thursday + weekday_is_friday
+                                     + weekday_is_saturday + weekday_is_sunday + data_channel_is_bus + is_weekend), data = training_set)
+    X_test = model.matrix(shares ~ (n_tokens_title + n_tokens_content + average_token_length + num_keywords
+                                    + avg_positive_polarity + global_rate_positive_words + global_rate_negative_words
+                                    + title_subjectivity + title_sentiment_polarity + self_reference_min_shares
+                                    + self_reference_max_shares + self_reference_avg_sharess + weekday_is_monday
+                                    + weekday_is_tuesday + weekday_is_wednesday + weekday_is_thursday + weekday_is_friday
+                                    + weekday_is_saturday + weekday_is_sunday + data_channel_is_bus + is_weekend), data = testing_set)
+    y_train = training_set$shares
+    y_test = testing_set$shares
+    
+    y_test_viral = ifelse(y_test > 1400, "Viral", "Not viral")
+    
+    # scale the training and testing set features
+    #scale_factors = apply(X_train, 2, sd)
+    #X_train_sc = scale(X_train, scale = scale_factors)
+    #X_test_sc = scale(X_test, scale = scale_factors)
+    
+    # Fit KNN model and calculate percent incorrect
+    knn_model = knn.reg(train = X_train, test = X_test, y_train, k = k_val)
+    knn_model$predViral = ifelse(knn_model$pred > 1400, "Viral", "Not viral")
+    
+    confusion_table = table(Actual = y_test_viral, Predicted = knn_model$predViral)
+    
+    # calculate perent error
+    percentIncorrect = (sum(y_test_viral != knn_model$predViral) / length(y_test_viral))
+
+    # add the current rmse to the running sum
+    sum_percentError = sum_percentError + percentIncorrect
+    
+    iterations = iterations + 1
+  }
+  
+  # calculate and store the percent error for the prediction
+  percentIncorrect_k[which(k_val == k_values)[[1]]] <- (sum_percentError / iterations)
+  
+  if ((sum_percentError / iterations) < min_percentIncorrect) {
+    final_confusion_matrix_knn = confusion_table
+    min_percentIncorrect = (sum_percentError / iterations)
+  }
+}
+
+# identify which k value produced the smallest rmse value for the KNN model
+print(min(percentIncorrect_k))
+print(k_values[which.min(percentIncorrect_k)])
+print(final_confusion_matrix_knn)
+```
+
+```{r online_confusion_matrix_knn, echo=FALSE}
+viral_viral = final_confusion_matrix_knn[4]
+notViral_viral = final_confusion_matrix_knn[3]
+viral_notViral = final_confusion_matrix_knn[2]
+notViral_notViral = final_confusion_matrix_knn[1]
+
+cat("            Predicted")
+cat("Actual        Viral        Not viral")
+cat("  Viral      ", viral_viral, "       ", viral_notViral)
+cat("  Not viral  ", notViral_viral, "       ", notViral_notViral)
+```
+
+```{r online_knn_percents, echo=FALSE}
+accuracy_rate = (viral_viral + notViral_notViral)/(viral_viral + notViral_viral + viral_notViral + notViral_notViral)
+error_rate = 1 - accuracy_rate
+cat("The accuracy rate for the KNN regression model is", accuracy_rate)
+cat("The error rate for the KNN regression model is", error_rate)
+
+true_positive_rate = viral_viral/(viral_viral+viral_notViral)
+cat("The true positive rate for the KNN regression model is", true_positive_rate)
+
+false_positive_rate = notViral_viral/(notViral_viral+notViral_notViral)
+cat("The false positive rate for the KNN regression model is", false_positive_rate)
+```
+
+Now, to further test if we could improve our predictions, we used a logistic regression to first threshold the instances in the data set as 'viral' or 'not viral', and then predict whether the testing set instances were 'viral' or 'not viral'. We did this by selecting predicted values above $0.5$ as 'viral' and 'not viral' otherwise. To minimize the variability in the results, we averaged the results over numerous train/test splits. The confusion matrix and the accuracy rate, error rate, true positive rate, and false positive rate are shown below for our logistic regression model.
+
+```{r online_logit, include=FALSE}
+### Logistic Regression ###
+n = nrow(online_news)
+n_train = round(0.8*n)  # round to nearest integer
+n_test = n - n_train
+
+confusion_tables_logit = do(100)*{
+  # re-split into train and test cases with the same sample sizes
+  train_cases = sample.int(n, n_train + 1, replace = FALSE)
+  test_cases = setdiff(1:n, train_cases)
+  
+  news_train = online_news[train_cases,]
+  news_test = online_news[test_cases,]
+  
+  newstrain_viral = ifelse(news_train$shares > 1400, 1, 0)
+  news_train$viral <- newstrain_viral
+  
+  # run a logistic regression on viral status
+  logit_news1 = glm(viral ~ (n_tokens_title + n_tokens_content + average_token_length + num_keywords
+                             + avg_positive_polarity + global_rate_positive_words + global_rate_negative_words
+                             + title_subjectivity + title_sentiment_polarity + self_reference_min_shares
+                             + self_reference_max_shares + self_reference_avg_sharess + weekday_is_monday
+                             + weekday_is_tuesday + weekday_is_wednesday + weekday_is_thursday +  weekday_is_friday
+                             + weekday_is_saturday + weekday_is_sunday + data_channel_is_bus + is_weekend), 
+                    data = news_train, family = binomial())
+  
+  coef(logit_news1)
+  
+  newstest_viral = ifelse(news_test$shares > 1400, "Viral", "Not viral")
+  phat_test = predict(logit_news1, newdata = news_test, type='response')
+  yhat_test = ifelse(phat_test > 0.5, "Viral", "Not viral")
+  
+  confusion_table = table(Actual = newstest_viral, Predicted = yhat_test)
+  c(confusion_table)
+}
+```
+
+```{r online_logit_confusion_matrix, echo=FALSE}
+viral_viral = colMeans(confusion_tables_logit[1])
+notViral_viral = colMeans(confusion_tables_logit[2])
+viral_notViral = colMeans(confusion_tables_logit[3])
+notViral_notViral = colMeans(confusion_tables_logit[4])
+
+cat("            Predicted")
+cat("Actual        Viral        Not viral")
+cat("  Viral      ", viral_viral, "       ", viral_notViral)
+cat("  Not viral  ", notViral_viral, "      ", notViral_notViral)
+```
+
+```{r online_logit_percents, echo=FALSE}
+accuracy_rate = (viral_viral + notViral_notViral)/(viral_viral + notViral_viral + viral_notViral + notViral_notViral)
+error_rate = 1 - accuracy_rate
+cat("The accuracy rate for the logistic regression model is", accuracy_rate)
+cat("The error rate for the logistic regression model is", error_rate)
+
+true_positive_rate = viral_viral/(viral_viral+viral_notViral)
+cat("The true positive rate for the logistic regression model is", true_positive_rate)
+
+false_positive_rate = notViral_viral/(notViral_viral+notViral_notViral)
+cat("The false positive rate for the logistic regression model is", false_positive_rate)
+```
+
+## Conclusion
+#### Which approach performs better: regress first and threshold second, or threshold first and regress/classify second?
+
+Since the accuracy rate of our optimal KNN regression model is greater than the accuracy rate of the baseline KNN model, we know that our KNN model performs better than the baseline model by predicting shares. Since the accuracy rate of our logistic regression model is greater than the accuracy rates of both the optimal KNN regression model and the baseline KNN regression model, we claim that we have developed an even better regression model for predicting 'viral' or 'not viral'.
+
+From fitting these regression models, we can see that the approach of thresholding first and regressing/classifying second works better for this data set to predict whether an article will be 'viral' or 'not viral'. This is because the accuracy rate for our logistic regression model is greater than the accuracy rate of our KNN regression model. We believe that this is due to the fact that classifying as 'viral' and 'not viral' is a smaller scope to deal with, so the factors that the logistic regression takes into account will be more accurate and will be a better predictor of the viral status of an article.
