@@ -2,8 +2,8 @@ library(tidyverse)
 library(foreach)
 
 # read in data
-congress109 = read.csv("../data/congress109.csv", header=TRUE, row.names=1)
-congress109members = read.csv("../data/congress109members.csv", header=TRUE, row.names=1)
+congress109 = read.csv("./congress109.csv", header=TRUE, row.names=1)
+congress109members = read.csv("./congress109members.csv", header=TRUE, row.names=1)
 
 # corpus statistics
 N = nrow(congress109)
