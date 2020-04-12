@@ -1,7 +1,7 @@
 # lasso regression using the gamlr library
 library(gamlr) 
 
-semiconductor = read.csv("../data/semiconductor.csv")
+semiconductor = read.csv("./semiconductor.csv")
 n = nrow(semiconductor)
 
 ## full model
