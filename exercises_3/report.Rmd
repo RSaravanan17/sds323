@@ -1,0 +1,37 @@
+---
+title: "SDS 323: Exercises 3 Report"
+author:
+  - Nikhil Ajjarapu
+  - Nevyn Duarte
+  - Rithvik Saravanan
+date: "April 20, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(LICORS)  # for kmeans++
+library(foreach)
+library(mosaic)
+library(cluster)
+
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+
+green = read.csv('./data/greenbuildings.csv')
+wine = read.csv('./data/wine.csv')
+social = read.csv('./data/social_marketing.csv')
+```
+
+# Predictive model building
+
+
+
+# What causes what?
+
+
+
+# Clustering and PCA
+
+
+
+# Market segmentation

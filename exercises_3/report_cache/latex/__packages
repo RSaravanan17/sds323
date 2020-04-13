@@ -1,0 +1,12 @@
+base
+ggplot2
+LICORS
+foreach
+dplyr
+lattice
+ggstance
+ggformula
+mosaicData
+Matrix
+mosaic
+cluster
