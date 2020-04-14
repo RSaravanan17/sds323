@@ -23,7 +23,7 @@ sigma = attr(X,"scaled:scale")
 # Run k-means with 10 clusters and 100 starts
 while (TRUE) {
   tryCatch({
-    clust1 = kmeans(X, 10, nstart=100)
+    clust1 = kmeans(X, 5, nstart=100)
     break
   }, error = function(w) {
     cat("\n")
@@ -79,7 +79,7 @@ ggplot(data = D_k[order(D_k$quality), ]) +
 # Run k-means++ with 10 clusters and 100 starts
 while (TRUE) {
   tryCatch({
-    clust2 = kmeanspp(X, k=10, nstart=100)
+    clust2 = kmeanspp(X, k=5, nstart=100)
     break
   }, error = function(w) {
     cat("\n")
@@ -147,10 +147,26 @@ while (TRUE) {
   })
 }
 
+asdf = 0
 # Gap statistic
-wine_gap = clusGap(X, FUN = kmeans, nstart = 25, K.max = 15, B = 10)
-plot(wine_gap)
-wine_gap
+while (TRUE) {
+  tryCatch({
+    print(asdf)
+    asdf = asdf + 1
+    wine_gap_kpp = clusGap(X, FUN = kmeanspp, nstart = 25, K.max = 20, B = 10)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+plot(wine_gap_kpp)
+wine_gap_kpp
+
+wine_gap_k = clusGap(X, FUN = kmeans, nstart = 25, K.max = 20, B = 10)
+plot(wine_gap_k)
+wine_gap_k
 
 
 # Compare versus within-cluster and between-cluster average distances
@@ -269,3 +285,24 @@ ggplot(data = D_centroid[order(D_centroid$quality), ]) +
   ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
   xlab("Cluster") +
   ylab("Proportion of Quality of Wine")
+
+# Gap statistic
+cluster_gap_hier_single <- function(x, k) list(cluster=cutree(hclust(dist(x), method="single"), k=k))
+wine_gap_hier_single = clusGap(X, FUN=cluster_gap_hier_single, K.max=10, B=5)
+plot(wine_gap_hier_single)
+wine_gap_hier_single
+
+cluster_gap_hier_complete <- function(x, k) list(cluster=cutree(hclust(dist(x), method="complete"), k=k))
+wine_gap_hier_complete = clusGap(X, FUN=cluster_gap_hier_complete, K.max=10, B=5)
+plot(wine_gap_hier_complete)
+wine_gap_hier_complete
+
+cluster_gap_hier_average <- function(x, k) list(cluster=cutree(hclust(dist(x), method="average"), k=k))
+wine_gap_hier_average = clusGap(X, FUN=cluster_gap_hier_average, K.max=10, B=5)
+plot(wine_gap_hier_average)
+wine_gap_hier_average
+
+cluster_gap_hier_centroid <- function(x, k) list(cluster=cutree(hclust(dist(x), method="centroid"), k=k))
+wine_gap_hier_centroid = clusGap(X, FUN=cluster_gap_hier_centroid, K.max=10, B=5)
+plot(wine_gap_hier_centroid)
+wine_gap_hier_centroid

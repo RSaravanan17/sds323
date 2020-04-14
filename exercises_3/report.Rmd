@@ -8,7 +8,7 @@ date: "April 20, 2020"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, comment=NA}
 library(ggplot2)
 library(LICORS)  # for kmeans++
 library(foreach)
@@ -34,8 +34,8 @@ This is because of the fallacy "correlation implies causation". As mentioned in 
   
 **2) How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.**
 
-```{r echo=FALSE, out.width='100%', fig.align = "center"}
-knitr::include_graphics('./report_files/ex3table2.jpg')
+```{r echo=FALSE, out.width='100%', fig.align = "center", comment=NA}
+knitr::include_graphics('./ex3table2.jpg')
 ```
 
 The UPenn researchers were able to isolate this effect by measuring the effect of police on crime when there was a high number of police in an area for a reason unrelated to crime. In the example mentioned in the podcast, they said that in Washington D.C. there are often a lot of cops for events that may attract terroristic threats, which allowed them to isolate the event. When the amount of crime was measured during those times, it had significantly dropped. In addition, they also measured the number of tourists measured by metro ridership (as shown in the chart), to check if the number of police on high-alert days had any influence on the number of tourists (potential victims) out and about. The table shows that the ridership was unchanged by the number of police on high terror days, which shows that there is in fact an inverse relationship between the number of police present and the amount of crime that occurs.  
@@ -46,8 +46,8 @@ They controlled for Metro ridership to answer the question of whether the drop i
   
 **4) Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?**
 
-```{r echo=FALSE, out.width='100%', fig.align = "center"}
-knitr::include_graphics('./report_files/ex3table4.jpg')
+```{r echo=FALSE, out.width='100%', fig.align = "center", comment=NA}
+knitr::include_graphics('./ex3table4.jpg')
 ```
 
 The model being estimated here is a linear model with a few variables as well as a constant to fit the data, where the dependent variable is crime. From the table, it seems to be that the theory that police influence crime holds especially strongly in District 1, but it still does hold some (albeit weak) weight in other districts as well. It seems the tourist theory mentioned earlier also holds true, as metro ridership has a positive coefficient as well. All in all, it seems that the police have a relatively strong effect on crime in District 1, and a much more moderate effect on crime in other districts after controlling for various other factors.  
@@ -56,12 +56,16 @@ The model being estimated here is a linear model with a few variables as well as
 
 # Clustering and PCA
 
-```{r wine_data, include=FALSE}
+To understand how useful PCA and clustering can be, we can turn to the data we have on wine. The dataset that we used for this exercise contains information on 11 chemical properties of 6500 different bottles of *vinho verde* wine from northern Portugal. This dataset also records two important features of each bottle of wine: the color (red or white) and quality (on a scale of 1-10).
+
+```{r wine_data, include=FALSE, comment=NA}
 summary(wine)
 head(wine)
 ```
 
-```{r wine_scale, echo=FALSE}
+To get a better idea of what this dataset is composed of, we can look at the scaled values of the overall dataset. Below is the data for the average ($\mu$) bottle of wine in the dataset and the standard deviation ($\sigma$) of the dataset.
+
+```{r wine_scale, echo=FALSE, comment=NA}
 # Center and scale the data
 X = wine[,-(12:13)]
 X = scale(X, center=TRUE, scale=TRUE)
@@ -70,115 +74,13 @@ X = scale(X, center=TRUE, scale=TRUE)
 mu = attr(X,"scaled:center")
 sigma = attr(X,"scaled:scale")
 
-mu
-sigma
+cat("Average data point in the dataset:", mu)
+cat("\nStandard deviation of the data points in the dataset:", sigma)
 ```
 
-```{r wine_k, include=FALSE}
-##### K-means #####
+To identify the number of clusters to use in our *K-means* clustering algorithms, we utilized the elbow and CH plots shown below. Since there is no significant *k* value identified by either plot, we used a gap statistic plot to help us identify the value of *k*.
 
-# Run k-means with 10 clusters and 100 starts
-while (TRUE) {
-  tryCatch({
-    clust1 = kmeans(X, 5, nstart=100)
-    break
-  }, error = function(w) {
-    cat("\n")
-    print(w)
-    cat("\n")
-  }, warning = function(w) {
-    cat("\n")
-    print(w)
-    cat("\n")
-  })
-}
-```
-
-```{r wine_k_clusters, echo=FALSE}
-# What are the clusters?
-clust1$center  # not super helpful
-for (i in 1:5) {
-  cat("\n\nAverage Data of Cluster", i, ":\n\n")
-  print(clust1$center[i,]*sigma + mu)
-}
-```
-
-```{r wine_k_bottles, include=FALSE}
-# Which wine bottles are in which clusters?
-for (i in 1:5) {
-  cat("\n\nWine Bottles in Cluster", i, ":\n\n")
-  print(which(clust1$cluster == i))
-}
-```
-
-```{r wine_k_sample_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold'}
-# A few plots with cluster membership shown
-# qplot is in the ggplot2 library
-qplot(alcohol, pH, data=wine, color=factor(clust1$cluster))
-qplot(alcohol, residual.sugar, data=wine, color=factor(clust1$cluster))
-qplot(alcohol, fixed.acidity, data=wine, color=factor(clust1$cluster))
-qplot(pH, fixed.acidity, data=wine, color=factor(clust1$cluster))
-qplot(volatile.acidity, fixed.acidity, data=wine, color=factor(clust1$cluster))
-qplot(citric.acid, residual.sugar, data=wine, color=factor(clust1$cluster))
-```
-
-```{r wine_k_plots, echo=FALSE}
-D_k = data.frame(wine, z = clust1$cluster)
-
-# plot proportion of red vs. white
-ggplot(data = D_k) + 
-  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
-  ggtitle("Proportion of Red and White Wine in Each Cluster") +
-  xlab("Cluster") +
-  ylab("Proportion of Color of Wine")
-
-# plot proportion of each quality
-ggplot(data = D_k[order(D_k$quality), ]) + 
-  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
-  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
-  xlab("Cluster") +
-  ylab("Proportion of Quality of Wine")
-```
-
-```{r wine_kpp, include=FALSE}
-##### K-means++ #####
-
-# Run k-means++ with 10 clusters and 100 starts
-while (TRUE) {
-  tryCatch({
-    clust2 = kmeanspp(X, k=5, nstart=100)
-    break
-  }, error = function(w) {
-    cat("\n")
-    print(w)
-    cat("\n")
-  }, warning = function(w) {
-    cat("\n")
-    print(w)
-    cat("\n")
-  })
-}
-```
-
-```{r wine_kpp_plots, echo=FALSE}
-D_kpp = data.frame(wine, z = clust2$cluster)
-
-# plot proportion of red vs. white
-ggplot(data = D_kpp) + 
-  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
-  ggtitle("Proportion of Red and White Wine in Each Cluster") +
-  xlab("Cluster") +
-  ylab("Proportion of Color of Wine")
-
-# plot proportion of each quality
-ggplot(data = D_kpp[order(D_kpp$quality), ]) + 
-  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
-  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
-  xlab("Cluster") +
-  ylab("Proportion of Quality of Wine")
-```
-
-```{r wine_kpp_compute_elbow, include=FALSE}
+```{r wine_kpp_compute_elbow, include=FALSE, comment=NA}
 # Elbow plot for k=5 to k=15
 while (TRUE) {
   tryCatch({
@@ -197,11 +99,7 @@ while (TRUE) {
 }
 ```
 
-```{r wine_kpp_elbow, echo=FALSE}
-plot(k_grid, SSE_grid)
-```
-
-```{r wine_kpp_compute_ch, include=FALSE}
+```{r wine_kpp_compute_ch, include=FALSE, comment=NA}
 # CH index plot for k=5 to k=15
 while (TRUE) {
   tryCatch({
@@ -223,148 +121,283 @@ while (TRUE) {
 }
 ```
 
-```{r wine_kpp_ch, echo=FALSE}
-plot(k_grid, CH_grid)
-```
-
-```{r wine_kpp_compute_gap, include=FALSE}
+```{r wine_kpp_compute_gap, include=FALSE, comment=NA}
 # Gap statistic
 wine_gap = clusGap(X, FUN = kmeans, nstart = 25, K.max = 15, B = 100)
 ```
 
-```{r wine_kpp_gap, echo=FALSE}
+```{r wine_kpp_accuracy_plots, echo=FALSE, fig.width = 8, fig.height = 5, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
+plot(k_grid, SSE_grid)
+plot(k_grid, CH_grid)
 plot(wine_gap)
+```
+
+```{r wine_kpp_gap, echo=FALSE, comment=NA}
 wine_gap
 ```
 
-```{r wine_k_vs_kpp, echo=FALSE}
+From this gap statistic plot, we can see that the function is non-increasing from *k*=5 to *k*=6. Thus, we initialized both of our algorithms with generating 5 clusters.
+
+## K-means Clustering
+
+Using this information, we first ran a *K-means* clustering algorithm on this dataset with *k*=5. For reference, below are the average values of the bottles in each cluster.
+
+```{r wine_k, include=FALSE, comment=NA}
+##### K-means #####
+
+# Run k-means with 10 clusters and 100 starts
+while (TRUE) {
+  tryCatch({
+    clust1 = kmeans(X, 5, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+```
+
+```{r wine_k_clusters, echo=FALSE, comment=NA}
+# What are the clusters?
+clust1$center  # not super helpful
+for (i in 1:5) {
+  cat("\n\nAverage Data of Cluster", i, ":\n\n")
+  print(clust1$center[i,]*sigma + mu)
+}
+```
+
+```{r wine_k_bottles, include=FALSE, comment=NA}
+# Which wine bottles are in which clusters?
+for (i in 1:5) {
+  cat("\n\nWine Bottles in Cluster", i, ":\n\n")
+  print(which(clust1$cluster == i))
+}
+```
+
+To get a rough idea of how this basic clustering algorithm performs, we can observe the accuracy of the clustering on some of the features.
+
+```{r wine_k_sample_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
+# A few plots with cluster membership shown
+# qplot is in the ggplot2 library
+qplot(alcohol, pH, data=wine, color=factor(clust1$cluster))
+qplot(alcohol, residual.sugar, data=wine, color=factor(clust1$cluster))
+qplot(alcohol, fixed.acidity, data=wine, color=factor(clust1$cluster))
+qplot(pH, fixed.acidity, data=wine, color=factor(clust1$cluster))
+qplot(volatile.acidity, fixed.acidity, data=wine, color=factor(clust1$cluster))
+qplot(citric.acid, residual.sugar, data=wine, color=factor(clust1$cluster))
+```
+
+It is important to note that *K-means* generates reasonable clusterings because each cluster has a relatively well-defined region in each plot, but the issue persists that there is a significant amount of overlap between the individual clusters in each of the plots.
+
+To get a better visualization of the clusters, we can look at how well they group the two additional features: color and quality.
+
+```{r wine_k_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
+D_k = data.frame(wine, z = clust1$cluster)
+
+# plot proportion of red vs. white
+ggplot(data = D_k) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_k[order(D_k$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
+
+These plots show a more descriptive explanation of the clusters. From the plot of red vs. white by cluster above, we can see that clusters 1 and 3 are predominantly bottles of red wine while clusters 2, 4, and 5 are predominantly bottles of white wine. Additionally, the plot of quality by cluster shows that clusters 2, 3, and 4 are roughly mid- to high-quality bottles of wine while clusters 1 and 5 contain comparatively lower-quality wine. Since the distinction between the clusters in terms of quality is somewhat ambiguous, we can look at other methods of clustering.
+
+To improve our clustering, we ran a *K-means++* clustering algorithm with *k*=5. Below are the same plots that were generated to observe a meaningful description of each cluster.
+
+```{r wine_kpp, include=FALSE, comment=NA}
+##### K-means++ #####
+
+# Run k-means++ with 10 clusters and 100 starts
+while (TRUE) {
+  tryCatch({
+    clust2 = kmeanspp(X, k=5, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+```
+
+```{r wine_kpp_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
+D_kpp = data.frame(wine, z = clust2$cluster)
+
+# plot proportion of red vs. white
+ggplot(data = D_kpp) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_kpp[order(D_kpp$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
+
+From the plot of red vs. white by cluster above, we can see that clusters 2 and 4 are predominantly bottles of red wine while clusters 1, 3, and 5 are predominantly bottles of white wine. Additionally, the plot of quality by cluster shows that clusters 2, 4, and 5 have low- to mid-quality wine while clusters 1 and 3 are roughly mid- to high-quality bottles of wine. This clusteirng algorithm shows noticeably better groupings from the basic *K-means* apprach because each cluster is more distinct. To verify this, we can look at the within-cluster and between-cluster average distances for the two clustering algorithms.
+
+```{r wine_k_vs_kpp, echo=FALSE, comment=NA}
 # Compare versus within-cluster and between-cluster average distances
 cat("K-means total within-cluster distances:", clust1$tot.withinss)
 cat("K-means++ total within-cluster distances:", clust2$tot.withinss)
 
-cat("K-means between-cluster distances:", clust1$betweenss)
+cat("\nK-means between-cluster distances:", clust1$betweenss)
 cat("K-means++ between-cluster distances:", clust2$betweenss)
 ```
 
-```{r wine_dist, include=FALSE}
+However, since our value for *k* is relatively small, the distance within and between clusters between the *K-means* and *K-means++* clustering algorithms is not very distinguishable. So, these measures are not the best way to convey that *K-means++* is preferred over *K-means* for the wine dataset. Given this, we can see that the clusters from *K-means++* show more understandable groupings than the clusters from *K-means*. Since the main goal of clustering is to cluster the data in a manner that makes it easy to interpret, we can acknowledge that *K-means++* accomplishes this goal better for the wine dataset.
+
+## Hierarchical Clustering
+
+To see if we could further build better clusterings, we used hierarchical clustering of the wine data with 15 clusters.
+
+```{r wine_dist, include=FALSE, comment=NA}
 ##### Hierarchical clustering #####
 
 # Form a pairwise distance matrix using the dist function
 wine_dist_matrix = dist(X, method='euclidean')
 ```
 
-```{r hier_single, include=FALSE}
+```{r hier_single, include=FALSE, comment=NA}
 ### Single (min) linkage
 hier_wine_single = hclust(wine_dist_matrix, method='single')
 plot(hier_wine_single, cex=0.8)  # Plot the dendrogram
 ```
 
-```{r hier_single_cut, echo=FALSE}
+Below is the number of wine bottles in each cluster for hierarchical clustering with single linkage. Since the clusters are very unbalanced (cluster 1 has significantly more data points than clusters 2-15), we determined that single linkage was not a viable method. For reference, we have also included the plots of the color of wine by cluster and the quality of wine by cluster. Since single linkage is not a feasible method, these plots are not very useful for identifying clusters.
+
+```{r hier_single_cut, echo=FALSE, comment=NA}
 hier_cluster1_single = cutree(hier_wine_single, k=15)  # Cut the trees into 15 clusters
 summary(factor(hier_cluster1_single))
 ```
 
-```{r hier_single_plots, echo=FALSE}
+```{r hier_single_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
 D_single = data.frame(wine, z = hier_cluster1_single)
 
 # plot proportion of red vs. white
 ggplot(data = D_single) + 
   geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
-  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  ggtitle("Proportion of Red and White Wine in Each Cluster\n(Hierarchical Clustering - Single Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Color of Wine")
 
 # plot proportion of each quality
 ggplot(data = D_single[order(D_single$quality), ]) + 
   geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
-  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster\n(Hierarchical Clustering - Single Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Quality of Wine")
 ```
 
-```{r hier_complete, include=FALSE}
+```{r hier_complete, include=FALSE, comment=NA}
 ### Complete (max) linkage
 hier_wine_complete = hclust(wine_dist_matrix, method='complete')
 plot(hier_wine_complete, cex=0.8)
 ```
 
-```{r hier_complete_cut, echo=FALSE}
+Below is the number of wine bottles in each cluster for hierarchical clustering with complete linkage. Since the clusters are relatively well balanced, we determined that complete linkage was a reasonable method. Looking at the plot of the color of wine by cluster, we can observe that clusters 1, 3, 4, 6, 9, and 10 are predominantly bottles of red wine while clusters 2, 5, 7, 8, 11, 12, 13, 14, and 15 are predominantly bottles of white wine. However, clusters 13, 14, and 15 are not that useful because they have comparatively few data points. From the plot of quality of wine by cluster, we can see that WRITE MORE HERE. This shows that complete linkage is a useful and insightful method for clustering the wine data.
+
+```{r hier_complete_cut, echo=FALSE, comment=NA}
 hier_cluster1_complete = cutree(hier_wine_complete, k=15)
 summary(factor(hier_cluster1_complete))
 ```
 
-```{r hier_complete_plots, echo=FALSE}
+```{r hier_complete_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
 D_complete = data.frame(wine, z = hier_cluster1_complete)
 
 # plot proportion of red vs. white
 ggplot(data = D_complete) + 
   geom_bar(mapping = aes(x = z, y = 1, fill = color), position="fill", stat='identity') +
-  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  ggtitle("Proportion of Red and White Wine in Each Cluster\n(Hierarchical Clustering - Complete Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Color of Wine")
 
 # plot proportion of each quality
 ggplot(data = D_complete[order(D_complete$quality), ]) + 
   geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
-  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster\n(Hierarchical Clustering - Complete Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Quality of Wine")
 ```
 
-```{r hier_average, include=FALSE}
+```{r hier_average, include=FALSE, comment=NA}
 ### Average linkage
 hier_wine_average = hclust(wine_dist_matrix, method='average')
 plot(hier_wine_average, cex=0.8)
 ```
 
-```{r hier_average_cut, echo=FALSE}
+For reference, we have also included the plots for running hierarchical clustering on the wine dataset with both average linkage and centroid linkage. Since the number of bottles per cluster is very unbalanced for both of these types of clustering (similar to single linkage), we determined that these types of linkage are also not viable to cluster the wine data.
+
+```{r hier_average_cut, echo=FALSE, comment=NA}
 hier_cluster1_average = cutree(hier_wine_average, k=15)
 summary(factor(hier_cluster1_average))
 ```
 
-```{r hier_average_plots, echo=FALSE}
+```{r hier_average_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
 D_average = data.frame(wine, z = hier_cluster1_average)
 
 # plot proportion of red vs. white
 ggplot(data = D_average) + 
   geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
-  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  ggtitle("Proportion of Red and White Wine in Each Cluster\n(Hierarchical Clustering - Average Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Color of Wine")
 
 # plot proportion of each quality
 ggplot(data = D_average[order(D_average$quality), ]) + 
   geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
-  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster\n(Hierarchical Clustering - Average Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Quality of Wine")
 ```
 
-```{r hier_centroid, include=FALSE}
+```{r hier_centroid, include=FALSE, comment=NA}
 ### Centroid linkage
 hier_wine_centroid = hclust(wine_dist_matrix, method='centroid')
 plot(hier_wine_centroid, cex=0.8)
 ```
 
-```{r hier_centroid_cut, echo=FALSE}
+```{r hier_centroid_cut, echo=FALSE, comment=NA}
 hier_cluster1_centroid = cutree(hier_wine_centroid, k=15)
 summary(factor(hier_cluster1_centroid))
 ```
 
-```{r hier_centroid_plots, echo=FALSE}
+```{r hier_centroid_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA}
 D_centroid = data.frame(wine, z = hier_cluster1_centroid)
 
 # plot proportion of red vs. white
 ggplot(data = D_centroid) + 
   geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
-  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  ggtitle("Proportion of Red and White Wine in Each Cluster\n(Hierarchical Clustering - Centroid Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Color of Wine")
 
 # plot proportion of each quality
 ggplot(data = D_centroid[order(D_centroid$quality), ]) + 
   geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
-  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster\n(Hierarchical Clustering - Centroid Linkage)") +
   xlab("Cluster") +
   ylab("Proportion of Quality of Wine")
 ```

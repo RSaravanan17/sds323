@@ -21,7 +21,8 @@ sigma = attr(S,"scaled:scale")
 clust1 = kmeans(S, 10, nstart=100)
 clust2 = kmeanspp(S, 10, nstart=100)
 
-qplot(S, chatter, data=social, color=factor(clust2$cluster))
+qplot(chatter, current_events, data=social, color=factor(clust2$cluster))
+qplot(chatter, photo_sharing, data=social, color=factor(clust2$cluster))
 
 # Gap statistic
 social_gap = clusGap(S, FUN = kmeans, nstart = 25, K.max = 15, B = 5)
@@ -37,3 +38,10 @@ clust2$tot.withinss
 
 clust1$betweenss
 clust2$betweenss
+
+
+##### Hierarchical clustering #####
+
+# Form a pairwise distance matrix using the dist function
+social_dist_matrix = dist(S, method='euclidean')
+
