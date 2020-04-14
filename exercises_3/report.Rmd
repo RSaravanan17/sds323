@@ -28,26 +28,30 @@ social = read.csv('./data/social_marketing.csv')
 
 
 # What causes what?
-**1. Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)**
+**1) Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)**
 
-This is because of the fallacy "correlation implies causation". As mentioned in the podcast, this fallacy can cause us to have irrational beliefs. In this specific example, even if there is some correlation between the variables of "Crime" and "Police", that doesn't necessarily mean that the police is the reason crime is changing. There could (and most likely are) other stronger explanations for changes in crime such as poverty, etc. Thus, all other variables must be controlled for in order to run this regression and draw any meaningful conclusions from it.
+This is because of the fallacy "correlation implies causation". As mentioned in the podcast, this fallacy can cause us to have irrational beliefs. In this specific example, even if there is some correlation between the variables of "Crime" and "Police", that doesn't necessarily mean that the police is the reason crime is changing. There could (and most likely are) other stronger explanations for changes in crime such as poverty, etc. Thus, all other variables must be controlled for in order to run this regression and draw any meaningful conclusions from it.  
+  
+**2) How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.**
 
-**2. How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.**
+```{r echo=FALSE, out.width='100%', fig.align = "center"}
+knitr::include_graphics('./report_files/ex3table2.jpg')
+```
 
-![Effect of Police on Crime](report_files/ex3table2.jpg)
+The UPenn researchers were able to isolate this effect by measuring the effect of police on crime when there was a high number of police in an area for a reason unrelated to crime. In the example mentioned in the podcast, they said that in Washington D.C. there are often a lot of cops for events that may attract terroristic threats, which allowed them to isolate the event. When the amount of crime was measured during those times, it had significantly dropped. In addition, they also measured the number of tourists measured by metro ridership (as shown in the chart), to check if the number of police on high-alert days had any influence on the number of tourists (potential victims) out and about. The table shows that the ridership was unchanged by the number of police on high terror days, which shows that there is in fact an inverse relationship between the number of police present and the amount of crime that occurs.  
+  
+**3) Why did they have to control for Metro ridership? What was that trying to capture?**
 
-The UPenn researchers were able to isolate this effect by measuring the effect of police on crime when there was a high number of police in an area for a reason unrelated to crime. In the example mentioned in the podcast, they said that in Washington D.C. there are often a lot of cops for events that may attract terroristic threats, which allowed them to isolate the event. When the amount of crime was measured during those times, it had significantly dropped. In addition, they also measured the number of tourists measured by metro ridership (as shown in the chart), to check if the number of police on high-alert days had any influence on the number of tourists (potential victims) out and about. The table shows that the ridership was unchanged by the number of police on high terror days, which shows that there is in fact an inverse relationship between the number of police present and the amount of crime that occurs.
+They controlled for Metro ridership to answer the question of whether the drop in crime was actually because of an increased police presence, or because there were just less potential victims (tourists and others who use the metro) around because they were scared by the high-alert police. As mentioned above, it was shown that ridership was not affected, which is further evidence that police themselves do have an effect on crime.  
+  
+**4) Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?**
 
-**3. Why did they have to control for Metro ridership? What was that trying to capture?**
+```{r echo=FALSE, out.width='100%', fig.align = "center"}
+knitr::include_graphics('./report_files/ex3table4.jpg')
+```
 
-They controlled for Metro ridership to answer the question of whether the drop in crime was actually because of an increased police presence, or because there were just less potential victims (tourists and others who use the metro) around because they were scared by the high-alert police. As mentioned above, it was shown that ridership was not affected, which is further evidence that police themselves do have an effect on crime. 
-
-**4. Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?**
-
-![Reduction in Crime on High-Alert Days: Concentration on the National Mall](report_files/ex3table4.jpg)
-
-The model being estimated here is a linear model with a few variables as well as a constant to fit the data, where the dependent variable is crime. From the table, it seems to be that the theory that police influence crime holds especially strongly in District 1, but it still does hold some (albeit weak) weight in other districts as well. It seems the tourist theory mentioned earlier also holds true, as metro ridership has a positive coefficient as well. All in all, it seems that the police have a relatively strong effect on crime in District 1, and a much more moderate effect on crime in other districts after controlling for various other factors. 
-
+The model being estimated here is a linear model with a few variables as well as a constant to fit the data, where the dependent variable is crime. From the table, it seems to be that the theory that police influence crime holds especially strongly in District 1, but it still does hold some (albeit weak) weight in other districts as well. It seems the tourist theory mentioned earlier also holds true, as metro ridership has a positive coefficient as well. All in all, it seems that the police have a relatively strong effect on crime in District 1, and a much more moderate effect on crime in other districts after controlling for various other factors.  
+  
 
 
 # Clustering and PCA
@@ -76,7 +80,7 @@ sigma
 # Run k-means with 10 clusters and 100 starts
 while (TRUE) {
   tryCatch({
-    clust1 = kmeans(X, 10, nstart=100)
+    clust1 = kmeans(X, 5, nstart=100)
     break
   }, error = function(w) {
     cat("\n")
@@ -93,7 +97,7 @@ while (TRUE) {
 ```{r wine_k_clusters, echo=FALSE}
 # What are the clusters?
 clust1$center  # not super helpful
-for (i in 1:10) {
+for (i in 1:5) {
   cat("\n\nAverage Data of Cluster", i, ":\n\n")
   print(clust1$center[i,]*sigma + mu)
 }
@@ -101,13 +105,13 @@ for (i in 1:10) {
 
 ```{r wine_k_bottles, include=FALSE}
 # Which wine bottles are in which clusters?
-for (i in 1:10) {
+for (i in 1:5) {
   cat("\n\nWine Bottles in Cluster", i, ":\n\n")
   print(which(clust1$cluster == i))
 }
 ```
 
-```{r wine_k_sample_plots, echo=FALSE}
+```{r wine_k_sample_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold'}
 # A few plots with cluster membership shown
 # qplot is in the ggplot2 library
 qplot(alcohol, pH, data=wine, color=factor(clust1$cluster))
@@ -115,6 +119,7 @@ qplot(alcohol, residual.sugar, data=wine, color=factor(clust1$cluster))
 qplot(alcohol, fixed.acidity, data=wine, color=factor(clust1$cluster))
 qplot(pH, fixed.acidity, data=wine, color=factor(clust1$cluster))
 qplot(volatile.acidity, fixed.acidity, data=wine, color=factor(clust1$cluster))
+qplot(citric.acid, residual.sugar, data=wine, color=factor(clust1$cluster))
 ```
 
 ```{r wine_k_plots, echo=FALSE}
@@ -141,7 +146,7 @@ ggplot(data = D_k[order(D_k$quality), ]) +
 # Run k-means++ with 10 clusters and 100 starts
 while (TRUE) {
   tryCatch({
-    clust2 = kmeanspp(X, k=10, nstart=100)
+    clust2 = kmeanspp(X, k=5, nstart=100)
     break
   }, error = function(w) {
     cat("\n")
