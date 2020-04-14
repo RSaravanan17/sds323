@@ -26,11 +26,343 @@ social = read.csv('./data/social_marketing.csv')
 
 
 
+
 # What causes what?
+**1. Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)**
+
+This is because of the fallacy "correlation implies causation". As mentioned in the podcast, this fallacy can cause us to have irrational beliefs. In this specific example, even if there is some correlation between the variables of "Crime" and "Police", that doesn't necessarily mean that the police is the reason crime is changing. There could (and most likely are) other stronger explanations for changes in crime such as poverty, etc. Thus, all other variables must be controlled for in order to run this regression and draw any meaningful conclusions from it.
+
+**2. How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.**
+
+![Effect of Police on Crime](report_files/ex3table2.jpg)
+
+The UPenn researchers were able to isolate this effect by measuring the effect of police on crime when there was a high number of police in an area for a reason unrelated to crime. In the example mentioned in the podcast, they said that in Washington D.C. there are often a lot of cops for events that may attract terroristic threats, which allowed them to isolate the event. When the amount of crime was measured during those times, it had significantly dropped. In addition, they also measured the number of tourists measured by metro ridership (as shown in the chart), to check if the number of police on high-alert days had any influence on the number of tourists (potential victims) out and about. The table shows that the ridership was unchanged by the number of police on high terror days, which shows that there is in fact an inverse relationship between the number of police present and the amount of crime that occurs.
+
+**3. Why did they have to control for Metro ridership? What was that trying to capture?**
+
+They controlled for Metro ridership to answer the question of whether the drop in crime was actually because of an increased police presence, or because there were just less potential victims (tourists and others who use the metro) around because they were scared by the high-alert police. As mentioned above, it was shown that ridership was not affected, which is further evidence that police themselves do have an effect on crime. 
+
+**4. Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?**
+
+![Reduction in Crime on High-Alert Days: Concentration on the National Mall](report_files/ex3table4.jpg)
+
+The model being estimated here is a linear model with a few variables as well as a constant to fit the data, where the dependent variable is crime. From the table, it seems to be that the theory that police influence crime holds especially strongly in District 1, but it still does hold some (albeit weak) weight in other districts as well. It seems the tourist theory mentioned earlier also holds true, as metro ridership has a positive coefficient as well. All in all, it seems that the police have a relatively strong effect on crime in District 1, and a much more moderate effect on crime in other districts after controlling for various other factors. 
 
 
 
 # Clustering and PCA
+
+```{r wine_data, include=FALSE}
+summary(wine)
+head(wine)
+```
+
+```{r wine_scale, echo=FALSE}
+# Center and scale the data
+X = wine[,-(12:13)]
+X = scale(X, center=TRUE, scale=TRUE)
+
+# Extract the centers and scales from the rescaled data (which are named attributes)
+mu = attr(X,"scaled:center")
+sigma = attr(X,"scaled:scale")
+
+mu
+sigma
+```
+
+```{r wine_k, include=FALSE}
+##### K-means #####
+
+# Run k-means with 10 clusters and 100 starts
+while (TRUE) {
+  tryCatch({
+    clust1 = kmeans(X, 10, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+```
+
+```{r wine_k_clusters, echo=FALSE}
+# What are the clusters?
+clust1$center  # not super helpful
+for (i in 1:10) {
+  cat("\n\nAverage Data of Cluster", i, ":\n\n")
+  print(clust1$center[i,]*sigma + mu)
+}
+```
+
+```{r wine_k_bottles, include=FALSE}
+# Which wine bottles are in which clusters?
+for (i in 1:10) {
+  cat("\n\nWine Bottles in Cluster", i, ":\n\n")
+  print(which(clust1$cluster == i))
+}
+```
+
+```{r wine_k_sample_plots, echo=FALSE}
+# A few plots with cluster membership shown
+# qplot is in the ggplot2 library
+qplot(alcohol, pH, data=wine, color=factor(clust1$cluster))
+qplot(alcohol, residual.sugar, data=wine, color=factor(clust1$cluster))
+qplot(alcohol, fixed.acidity, data=wine, color=factor(clust1$cluster))
+qplot(pH, fixed.acidity, data=wine, color=factor(clust1$cluster))
+qplot(volatile.acidity, fixed.acidity, data=wine, color=factor(clust1$cluster))
+```
+
+```{r wine_k_plots, echo=FALSE}
+D_k = data.frame(wine, z = clust1$cluster)
+
+# plot proportion of red vs. white
+ggplot(data = D_k) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_k[order(D_k$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
+
+```{r wine_kpp, include=FALSE}
+##### K-means++ #####
+
+# Run k-means++ with 10 clusters and 100 starts
+while (TRUE) {
+  tryCatch({
+    clust2 = kmeanspp(X, k=10, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+```
+
+```{r wine_kpp_plots, echo=FALSE}
+D_kpp = data.frame(wine, z = clust2$cluster)
+
+# plot proportion of red vs. white
+ggplot(data = D_kpp) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_kpp[order(D_kpp$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
+
+```{r wine_kpp_compute_elbow, include=FALSE}
+# Elbow plot for k=5 to k=15
+while (TRUE) {
+  tryCatch({
+    k_grid = seq(5, 15, by=1)
+    SSE_grid = foreach (k = k_grid, .combine='c') %do% {
+      cat(k, "")
+      cluster_k = kmeanspp(X, k, nstart=50)
+      cluster_k$tot.withinss
+    }
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+```
+
+```{r wine_kpp_elbow, echo=FALSE}
+plot(k_grid, SSE_grid)
+```
+
+```{r wine_kpp_compute_ch, include=FALSE}
+# CH index plot for k=5 to k=15
+while (TRUE) {
+  tryCatch({
+    N = nrow(wine)
+    CH_grid = foreach(k = k_grid, .combine='c') %do% {
+      cat(k, "")
+      cluster_k = kmeanspp(X, k, nstart=50)
+      W = cluster_k$tot.withinss
+      B = cluster_k$betweenss
+      CH = (B / W) * ((N - k) / (k - 1))
+      CH
+    }
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+```
+
+```{r wine_kpp_ch, echo=FALSE}
+plot(k_grid, CH_grid)
+```
+
+```{r wine_kpp_compute_gap, include=FALSE}
+# Gap statistic
+wine_gap = clusGap(X, FUN = kmeans, nstart = 25, K.max = 15, B = 100)
+```
+
+```{r wine_kpp_gap, echo=FALSE}
+plot(wine_gap)
+wine_gap
+```
+
+```{r wine_k_vs_kpp, echo=FALSE}
+# Compare versus within-cluster and between-cluster average distances
+cat("K-means total within-cluster distances:", clust1$tot.withinss)
+cat("K-means++ total within-cluster distances:", clust2$tot.withinss)
+
+cat("K-means between-cluster distances:", clust1$betweenss)
+cat("K-means++ between-cluster distances:", clust2$betweenss)
+```
+
+```{r wine_dist, include=FALSE}
+##### Hierarchical clustering #####
+
+# Form a pairwise distance matrix using the dist function
+wine_dist_matrix = dist(X, method='euclidean')
+```
+
+```{r hier_single, include=FALSE}
+### Single (min) linkage
+hier_wine_single = hclust(wine_dist_matrix, method='single')
+plot(hier_wine_single, cex=0.8)  # Plot the dendrogram
+```
+
+```{r hier_single_cut, echo=FALSE}
+hier_cluster1_single = cutree(hier_wine_single, k=15)  # Cut the trees into 15 clusters
+summary(factor(hier_cluster1_single))
+```
+
+```{r hier_single_plots, echo=FALSE}
+D_single = data.frame(wine, z = hier_cluster1_single)
+
+# plot proportion of red vs. white
+ggplot(data = D_single) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_single[order(D_single$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
+
+```{r hier_complete, include=FALSE}
+### Complete (max) linkage
+hier_wine_complete = hclust(wine_dist_matrix, method='complete')
+plot(hier_wine_complete, cex=0.8)
+```
+
+```{r hier_complete_cut, echo=FALSE}
+hier_cluster1_complete = cutree(hier_wine_complete, k=15)
+summary(factor(hier_cluster1_complete))
+```
+
+```{r hier_complete_plots, echo=FALSE}
+D_complete = data.frame(wine, z = hier_cluster1_complete)
+
+# plot proportion of red vs. white
+ggplot(data = D_complete) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_complete[order(D_complete$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
+
+```{r hier_average, include=FALSE}
+### Average linkage
+hier_wine_average = hclust(wine_dist_matrix, method='average')
+plot(hier_wine_average, cex=0.8)
+```
+
+```{r hier_average_cut, echo=FALSE}
+hier_cluster1_average = cutree(hier_wine_average, k=15)
+summary(factor(hier_cluster1_average))
+```
+
+```{r hier_average_plots, echo=FALSE}
+D_average = data.frame(wine, z = hier_cluster1_average)
+
+# plot proportion of red vs. white
+ggplot(data = D_average) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_average[order(D_average$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
+
+```{r hier_centroid, include=FALSE}
+### Centroid linkage
+hier_wine_centroid = hclust(wine_dist_matrix, method='centroid')
+plot(hier_wine_centroid, cex=0.8)
+```
+
+```{r hier_centroid_cut, echo=FALSE}
+hier_cluster1_centroid = cutree(hier_wine_centroid, k=15)
+summary(factor(hier_cluster1_centroid))
+```
+
+```{r hier_centroid_plots, echo=FALSE}
+D_centroid = data.frame(wine, z = hier_cluster1_centroid)
+
+# plot proportion of red vs. white
+ggplot(data = D_centroid) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_centroid[order(D_centroid$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+```
 
 
 

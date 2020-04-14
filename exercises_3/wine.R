@@ -21,7 +21,20 @@ sigma = attr(X,"scaled:scale")
 ##### K-means #####
 
 # Run k-means with 10 clusters and 100 starts
-clust1 = kmeans(X, 10, nstart=100)
+while (TRUE) {
+  tryCatch({
+    clust1 = kmeans(X, 10, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
 
 # What are the clusters?
 clust1$center  # not super helpful
@@ -44,11 +57,56 @@ qplot(alcohol, fixed.acidity, data=wine, color=factor(clust1$cluster))
 qplot(pH, fixed.acidity, data=wine, color=factor(clust1$cluster))
 qplot(volatile.acidity, fixed.acidity, data=wine, color=factor(clust1$cluster))
 
+D_k = data.frame(wine, z = clust1$cluster)
+
+# plot proportion of red vs. white
+ggplot(data = D_k) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_k[order(D_k$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+
 
 ##### K-means++ #####
 
 # Run k-means++ with 10 clusters and 100 starts
-clust2 = kmeanspp(X, k=10, nstart=100)
+while (TRUE) {
+  tryCatch({
+    clust2 = kmeanspp(X, k=10, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+
+D_kpp = data.frame(wine, z = clust2$cluster)
+
+# plot proportion of red vs. white
+ggplot(data = D_kpp) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_kpp[order(D_kpp$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
 
 # Elbow plot for k=5 to k=15
 while (TRUE) {
@@ -96,14 +154,11 @@ wine_gap
 
 
 # Compare versus within-cluster and between-cluster average distances
-clust1$withinss
-clust2$withinss
+cat("K-means total within-cluster distances:", clust1$tot.withinss)
+cat("K-means++ total within-cluster distances:", clust2$tot.withinss)
 
-clust1$tot.withinss
-clust2$tot.withinss
-
-clust1$betweenss
-clust2$betweenss
+cat("K-means between-cluster distances:", clust1$betweenss)
+cat("K-means++ between-cluster distances:", clust2$betweenss)
 
 
 ##### Hierarchical clustering #####
@@ -116,36 +171,101 @@ wine_dist_matrix = dist(X, method='euclidean')
 hier_wine_single = hclust(wine_dist_matrix, method='single')
 plot(hier_wine_single, cex=0.8)  # Plot the dendrogram
 
-hier_cluster1_single = cutree(hier_wine_single, k=10)  # Cut the trees into 10 clusters
+hier_cluster1_single = cutree(hier_wine_single, k=15)  # Cut the trees into 15 clusters
 summary(factor(hier_cluster1_single))
 
 which(hier_cluster1_single == 1)  # Examine the cluster members
 
-D1 = data.frame(wine, z = hier_cluster1_single)
-ggplot(D1) + geom_point(aes(x=fixed.acidity, y=pH, col=factor(z)))
+D_single = data.frame(wine, z = hier_cluster1_single)
+
+# plot proportion of red vs. white
+ggplot(data = D_single) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_single[order(D_single$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
 
 
 ### Complete (max) linkage
 hier_wine_complete = hclust(wine_dist_matrix, method='complete')
 plot(hier_wine_complete, cex=0.8)
 
-hier_cluster1_complete = cutree(hier_wine_complete, k=10)
+hier_cluster1_complete = cutree(hier_wine_complete, k=15)
 summary(factor(hier_cluster1_complete))
 
 which(hier_cluster1_complete == 1)
 
-D2 = data.frame(wine, z = hier_cluster1_complete)
-ggplot(D2) + geom_point(aes(x=fixed.acidity, y=pH, col=factor(z)))
+D_complete = data.frame(wine, z = hier_cluster1_complete)
+
+# plot proportion of red vs. white
+ggplot(data = D_complete) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_complete[order(D_complete$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
 
 
 ### Average linkage
 hier_wine_average = hclust(wine_dist_matrix, method='average')
 plot(hier_wine_average, cex=0.8)
 
-hier_cluster1_average = cutree(hier_wine_average, k=10)
+hier_cluster1_average = cutree(hier_wine_average, k=15)
 summary(factor(hier_cluster1_average))
 
 which(hier_cluster1_average == 1)
 
-D3 = data.frame(wine, z = hier_cluster1_average)
-ggplot(D3) + geom_point(aes(x=fixed.acidity, y=pH, col=factor(z)))
+D_average = data.frame(wine, z = hier_cluster1_average)
+
+# plot proportion of red vs. white
+ggplot(data = D_average) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_average[order(D_average$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
+
+
+### Centroid linkage
+hier_wine_centroid = hclust(wine_dist_matrix, method='centroid')
+plot(hier_wine_centroid, cex=0.8)
+
+hier_cluster1_centroid = cutree(hier_wine_centroid, k=15)
+summary(factor(hier_cluster1_centroid))
+
+which(hier_cluster1_centroid == 1)
+
+D_centroid = data.frame(wine, z = hier_cluster1_centroid)
+
+# plot proportion of red vs. white
+ggplot(data = D_centroid) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = color), position="fill", stat='identity') +
+  ggtitle("Proportion of Red and White Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Color of Wine")
+
+# plot proportion of each quality
+ggplot(data = D_centroid[order(D_centroid$quality), ]) + 
+  geom_bar(mapping = aes(x = z, y = 1, fill = quality), position="fill", stat='identity') +
+  ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Quality of Wine")
