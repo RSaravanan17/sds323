@@ -25,8 +25,8 @@ lm_vals = do(100)*{
   # re-split into train and test cases with the same sample sizes
   train_cases = sample.int(n, n_train, replace=FALSE)
   test_cases = setdiff(1:n, train_cases)
-  on_train = greenbuildings[train_cases,2:ncol(greenbuildings)]
-  on_test = greenbuildings[test_cases,2:ncol(greenbuildings)]
+  on_train = greenbuildings[train_cases, 2:ncol(greenbuildings)]
+  on_test = greenbuildings[test_cases, 2:ncol(greenbuildings)]
   
   lm_ajjarapu = lm(Rent ~ ., data=on_train) 
   
@@ -38,7 +38,7 @@ lm_vals = do(100)*{
 lm_avg = unname(colMeans(lm_vals))
 
 #model 2: knn (RMSE)
-k_limit = 3
+k_limit = 100
 k_vals = 2:k_limit
 knn_vals = matrix(0, k_limit - 1, 2)
 
@@ -74,7 +74,8 @@ for (k_val in k_vals) {
   rmse_vals_avg = colMeans(rmse_vals_iter)
   knn_vals[k_val - 1,] = rmse_vals_avg
 }
-knn_avg = unname(knn_vals[which.min(knn_vals[,2]),])
+plot(knn_vals[,1], knn_vals[,2], ty = "l")
+knn_rmse = unname(knn_vals[which.min(knn_vals[,2]),])
 
 #model 3: lasso regression (RMSE)
 scx = model.matrix(Rent ~ .-1, model.frame(~ ., data=greenbuildings, na.action=na.pass)) # do -1 to drop intercept!
@@ -117,8 +118,14 @@ vals_logm = do(100)*{
 }
 logm_vals = unname(colMeans(vals_logm))
 
+
+plot(on_test$Rent, ty = "l")
+lines(lm(Rent ~ ., data=on_test)$fitted.values, ty = "l", col="red")
+lines(glm(Rent ~ ., data=on_test, family=gaussian, maxit = 100)$fitted.values, ty = "l", col="blue")
+
+
 print(paste("MODEL SUCCESS: "))
-print(paste("1) LINEAR REGRESSION MODEL - RMSE val: ", lm_avg))
-print(paste("2) kNN - k=",knn_avg[1]," RMSE val: ", knn_avg[2]))
+print(paste("1) LINEAR REGRESSION MODEL - RMSE val:", lm_avg))
+print(paste("2) kNN ( k =",knn_rmse[1],") - RMSE val:", knn_rmse[2]))
 print(paste("3) LASSO REGRESSION - N/A"))
-print(paste("4) LOGISTIC REGRESSION - RMSE val: ", logm_vals))
+print(paste("4) LOGISTIC REGRESSION - RMSE val:", logm_vals))

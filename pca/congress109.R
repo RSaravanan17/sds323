@@ -1,7 +1,7 @@
 library(ggplot2)
 
-countdata = read.csv("../data/congress109.csv", header=TRUE, row.names=1)
-memberdata = read.csv("../data/congress109members.csv", header=TRUE, row.names=1)
+countdata = read.csv("./congress109.csv", header=TRUE, row.names=1)
+memberdata = read.csv("./congress109members.csv", header=TRUE, row.names=1)
 
 # First normalize phrase counts to phrase frequencies.
 # (often a sensible first step for count data, before z-scoring)

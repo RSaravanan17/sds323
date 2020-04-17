@@ -9,13 +9,141 @@ wine = read.csv('./data/wine.csv', header=TRUE)
 summary(wine)
 head(wine)
 
+wine$quality2 <- rep(0, nrow(wine))
+wine$quality2[which(wine$quality == 1)] <- "one"
+wine$quality2[which(wine$quality == 2)] <- "two"
+wine$quality2[which(wine$quality == 3)] <- "third"
+wine$quality2[which(wine$quality == 4)] <- "fourth"
+wine$quality2[which(wine$quality == 5)] <- "five"
+wine$quality2[which(wine$quality == 6)] <- "six"
+wine$quality2[which(wine$quality == 7)] <- "seven"
+wine$quality2[which(wine$quality == 8)] <- "eight"
+wine$quality2[which(wine$quality == 9)] <- "nine"
+wine$quality2[which(wine$quality == 10)] <- "ten"
+
 # Center and scale the data
-X = wine[,-(12:13)]
+X = wine[,-(12:14)]
 X = scale(X, center=TRUE, scale=TRUE)
 
 # Extract the centers and scales from the rescaled data (which are named attributes)
 mu = attr(X,"scaled:center")
 sigma = attr(X,"scaled:scale")
+
+
+
+##### PCA #####
+
+# PCA of wine data
+PCAwine = prcomp(X, scale=TRUE)
+
+## variance plot
+plot(PCAwine)
+summary(PCAwine)
+
+# first three PCs
+round(PCAwine$rotation[,1:3],2) 
+
+# merge quality and color to PC1, PC2, and PC3
+wine_features = wine[,12:14]
+wine_features = merge(wine_features, PCAwine$x[,1:3], by="row.names")
+
+# add boolean color for logistic regression
+wine_features = data.frame(wine_features, "isRed" = ifelse(wine_features$color == "red", TRUE, FALSE))
+
+# plot PCs with color label
+ggplot(wine_features) + 
+  geom_point(aes(x=PC1, y=PC2, color=color)) +
+  ggtitle("Principal Components 1 and 2 by Color of Wine") +
+  xlab("Principal Component 1") +
+  ylab("Principal Component 2")
+
+ggplot(wine_features) + 
+  geom_point(aes(x=PC1, y=PC3, color=color)) +
+  ggtitle("Principal Components 1 and 3 by Color of Wine") +
+  xlab("Principal Component 1") +
+  ylab("Principal Component 3")
+
+ggplot(wine_features) + 
+  geom_point(aes(x=PC1, y=PC2, color=quality2)) +
+  ggtitle("Principal Components 1 and 2 by Quality of Wine") +
+  xlab("Principal Component 1") +
+  ylab("Principal Component 2")
+  
+# plot PCs with quality label
+ggplot(wine_features) + 
+  geom_boxplot(aes(y=PC1, x=quality, group=quality)) +
+  ggtitle("Principal Component 1 by Quality of Wine") +
+  xlab("Quality of Wine") +
+  ylab("Principal Component 1")
+
+ggplot(wine_features) + 
+  geom_boxplot(aes(y=PC1, x=quality, group=quality), outlier.shape=NA) +
+  ylim(-5, 5) +
+  ggtitle("Principal Component 1 by Quality of Wine") +
+  xlab("Quality of Wine") +
+  ylab("Principal Component 1")
+
+ggplot(wine_features) + 
+  geom_boxplot(aes(y=PC2, x=quality, group=quality)) +
+  ggtitle("Principal Component 2 by Quality of Wine") +
+  xlab("Quality of Wine") +
+  ylab("Principal Component 2")
+
+ggplot(wine_features) + 
+  geom_boxplot(aes(y=PC2, x=quality, group=quality), outlier.shape=NA) +
+  ylim(-5, 5) +
+  ggtitle("Principal Component 2 by Quality of Wine") +
+  xlab("Quality of Wine") +
+  ylab("Principal Component 2")
+
+ggplot(wine_features) + 
+  geom_boxplot(aes(y=PC3, x=quality, group=quality)) +
+  ggtitle("Principal Component 3 by Quality of Wine") +
+  xlab("Quality of Wine") +
+  ylab("Principal Component 3")
+
+ggplot(wine_features) + 
+  geom_boxplot(aes(y=PC3, x=quality, group=quality), outlier.shape=NA) +
+  ylim(-5, 5) +
+  ggtitle("Principal Component 3 by Quality of Wine") +
+  xlab("Quality of Wine") +
+  ylab("Principal Component 3")
+
+# principal component regression: predicted color and quality
+#lm_color = lm(color ~ PC1 + PC2 + PC3, data=wine_features)
+lm_color = glm(isRed ~ PC1 + PC2 + PC3, data=wine_features, family="binomial")
+summary(lm_color)
+
+lm_quality = lm(quality ~ PC1 + PC2 + PC3, data=wine_features)
+summary(lm_quality)
+
+# Conclusion: we can predict color and quality
+# with PCA summaries of the wine data
+#plot(color ~ fitted(lm_color), data=wine_features)
+ggplot(data = wine_features) +
+  geom_boxplot(aes(x=color, y=fitted(lm_color))) +
+  ggtitle("Predicted Wine Colors from Principal Components") +
+  xlab("Actual Color of Wine") +
+  ylab("Proportion of Prediction (1 = Red, 0 = White)")
+
+ggplot(data = wine_features) +
+  geom_violin(aes(x=color, y=fitted(lm_color))) +
+  ggtitle("Predicted Wine Colors from Principal Components") +
+  xlab("Actual Color of Wine") +
+  ylab("Proportion of Prediction (1 = Red, 0 = White)")
+
+#plot(quality ~ fitted(lm_quality), data=wine_features)
+ggplot(data = wine_features) +
+  geom_boxplot(aes(x=quality, y=fitted(lm_quality), group=quality)) +
+  ggtitle("Predicted Wine Quality from Principal Components") +
+  xlab("Actual Quality of Wine") +
+  ylab("Proportion of Prediction (1 = Red, 0 = White)")
+
+ggplot(data = wine_features) +
+  geom_violin(aes(x=quality, y=fitted(lm_quality), group=quality)) +
+  ggtitle("Predicted Wine Quality from Principal Components") +
+  xlab("Actual Quality of Wine") +
+  ylab("Predicted Quality of Wine")
 
 
 ##### K-means #####
@@ -234,6 +362,19 @@ ggplot(data = D_complete[order(D_complete$quality), ]) +
   xlab("Cluster") +
   ylab("Proportion of Quality of Wine")
 
+# bar plot of average quality by cluster
+quality_mean_by_cluster = aggregate(D_complete[, 12], list(D_complete$z), mean)
+quality_mean_by_cluster = rename(quality_mean_by_cluster, cluster = Group.1)
+quality_mean_by_cluster = rename(quality_mean_by_cluster, avg_quality = x)
+quality_mean_by_cluster$avg_quality <- round(quality_mean_by_cluster$avg_quality, digit=2)
+
+ggplot(data = quality_mean_by_cluster) + 
+  geom_bar(mapping = aes(x = reorder(cluster, -avg_quality), y = avg_quality), stat='identity') +
+  geom_text(aes(x = reorder(cluster, -avg_quality), y = avg_quality, label = avg_quality), vjust = 2, color = "white", size = 2.5) +
+  ggtitle("Average Quality of Wine in Each Cluster") +
+  xlab("Cluster") +
+  ylab("Average Quality of Wine")
+
 
 ### Average linkage
 hier_wine_average = hclust(wine_dist_matrix, method='average')
@@ -285,6 +426,7 @@ ggplot(data = D_centroid[order(D_centroid$quality), ]) +
   ggtitle("Proportion of Each Quality of Wine in Each Cluster") +
   xlab("Cluster") +
   ylab("Proportion of Quality of Wine")
+
 
 # Gap statistic
 cluster_gap_hier_single <- function(x, k) list(cluster=cutree(hclust(dist(x), method="single"), k=k))

@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggplot2)
 ### *** data on tv shows from NBC *** ###
 
-shows = read.csv("../data/nbc_showdetails.csv", row.names=1) ## show details; ratings and engagement
+shows = read.csv("./nbc_showdetails.csv", row.names=1) ## show details; ratings and engagement
 # https://digiday.com/marketing/what-is-a-grp-gross-ratings-point/
 
 # predicted engagement versus gross ratings points
@@ -12,7 +12,7 @@ ggplot(shows) +
 ## Now read the pilot focus group survey results
 ## for each question, 1=strongly disagree, 5=strongly agree.
 ## 1: 'The show makes me feel ____', 2: 'I found the show ____'
-survey = read.csv("../data/nbc_pilotsurvey.csv") 
+survey = read.csv("./nbc_pilotsurvey.csv") 
 
 pilot_results = survey %>%
 	group_by(Show) %>% 
