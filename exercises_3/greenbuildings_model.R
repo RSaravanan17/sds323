@@ -140,7 +140,7 @@ logm_vals = unname(colMeans(vals_logm))
 
 paste("MODEL SUCCESS: ")
 paste("1) LINEAR REGRESSION MODEL - no squared RMSE val: ", lm_avg[1], " squared RMSE val: ", lm_avg[2])
-paste("2) kNN - k=",knn_avg[1]," RMSE val: ", knn_avg[2])
+paste("2) kNN - k=",knn_rmse[1]," RMSE val: ", knn_rmse[2])
 paste("3) LASSO REGRESSION - RMSE val: ", lr_model_avg[1])
 print("coefficients for lasso regression: ")
 print(coef(cv_fit_l$glmnet.fit,s = cv_fit_l$lambda.min))
