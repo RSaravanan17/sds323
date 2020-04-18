@@ -9,12 +9,12 @@ greenbuildings = read.csv('./data/greenbuildings.csv', header=TRUE)
 
 # rmse function
 rmse = function(y, yhat) {
-  sqrt(mean( (y - yhat)^2, na.rm=TRUE))
+  sqrt(mean((y - yhat)^2, na.rm=TRUE))
 }
 
 # variables that control how long the program takes to run
-num_splits = 10
-k_limit = 3
+num_splits = 100
+k_limit = 30
 
 #model 1: linear regression model (RMSE)
 #80% training data, 20% test data
@@ -82,10 +82,6 @@ plot(knn_vals[,1], knn_vals[,2], ty = "l")
 knn_rmse = unname(knn_vals[which.min(knn_vals[,2]),])
 
 #model 3: lasso regression/ridge regression (RMSE)
-
-# plot(on_test$Rent, ty = "l")
-# lines(lm(Rent ~ ., data=on_test)$fitted.values, ty = "l", col="red")
-# lines(glm(Rent ~ ., data=on_test, family=gaussian, maxit = 100)$fitted.values, ty = "l", col="blue")
 vals_lr_rr = do(num_splits)*{
   
   # re-split into train and test cases with the same sample sizes
@@ -136,10 +132,16 @@ vals_logm = do(num_splits)*{
 }
 logm_vals = unname(colMeans(vals_logm))
 
+
+# plot(on_test$Rent, ty = "l")
+# lines(lm(Rent ~ ., data=on_test)$fitted.values, ty = "l", col="red")
+# lines(glm(Rent ~ ., data=on_test, family=gaussian, maxit = 100)$fitted.values, ty = "l", col="blue")
+
+
 paste("MODEL SUCCESS: ")
 paste("1) LINEAR REGRESSION MODEL - no squared RMSE val: ", lm_avg[1], " squared RMSE val: ", lm_avg[2])
 paste("2) kNN - k=",knn_avg[1]," RMSE val: ", knn_avg[2])
-paste("3) LASSO REGRESSION - RMSE val: ", lr_model_avg[2])
+paste("3) LASSO REGRESSION - RMSE val: ", lr_model_avg[1])
 print("coefficients for lasso regression: ")
 print(coef(cv_fit_l$glmnet.fit,s = cv_fit_l$lambda.min))
 paste("3) RIDGE REGRESSION - RMSE val: ", rr_model_avg[1])
