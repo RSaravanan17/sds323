@@ -1,0 +1,27 @@
+## Question 1
+
+## Overview
+
+In this exercise, our group is trying to determine the best possible model to predict rent prices for a collection of 7,894 rental properties. In addition, we are also trying to quantify the average change in rental income per square foot associated with green certification, while holding other factors constant. We will be able to do this by using a variety of different models to see which one fits best, then analyzing the nature of that model to determine the average change in rental income per green certification. 
+
+## Data and Model
+
+In order to test which model would be best for this problem, we decided to test 5 different models: a linear model, a kNN regression model, a lasso regression and ridge regression model, and finally a logistic regression model. By including every model we've covered, we can ensure that we will have the most accurate model to describe price. We measured the performance of every model using RMSE (root mean squared error) to determine which had the least error. 
+
+# Linear Model
+The first model we used was the basic linear model, with all the features included. (Even though lasso and ridge regression are improved versions of the linear model, we felt that including it was important as a benchmark.) 
+
+# kNN Model
+
+We decided to use k values from 1 - 20 when creating different models, as we could see from the graph that it plateued before and going beyond 20 would only result in worser models. 
+*TODO: insert plot *
+
+# Lasso and Ridge Regression Model
+
+# Logistic Regression
+
+## Results
+For each model, we decided to run *TODO: insert number of iterations* iterations, each with a different subset of data to run cross validation and get an averaged error value to prevent random splits from generating a extremely high or low error value. 
+
+## Conclusion
+
