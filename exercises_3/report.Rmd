@@ -43,7 +43,7 @@ In order to test which model would be best for this activity, we built 5 differe
 
 ### Linear Model
 
-The first model we built were two basic linear models. The first model included all of the features without interactions and the second model included all of the features with interactions. Even though lasso and ridge regression are improved versions of the linear model, we included these linear models as a benchmark.
+The first model we built were two basic linear models. The first model included all of the features without interactions and the second model included all of the features with interactions. Even though lasso and ridge regression are improved versions of the linear model, we included these linear models as a benchmark. As the models involve multiple x-values, we decided to plot the actual price vs predicted price, and include a y=x line as a benchmark of what perfect fit would look like. 
 
 ```{r green_lm, include=FALSE, comment=NA}
 # rmse function
@@ -84,14 +84,42 @@ lm_avg = unname(colMeans(lm_vals))
 
 ```{r green_lm_rmse, echo=FALSE, comment=NA}
 cat("LINEAR REGRESSION MODEL (without interactions) - RMSE:", lm_avg[1])
-cat("LINEAR REGRESSION MODEL (with interactions) - RMSE:", lm_avg[2])
+cat("\nLINEAR REGRESSION MODEL (with interactions) - RMSE:", lm_avg[2])
 ```
 
 ```{r green_lm_plot1, echo=FALSE, comment=NA}
+train_cases = sample.int(n, n_train, replace=FALSE)
+test_cases = setdiff(1:n, train_cases)
+on_train = green[train_cases, 2:ncol(green)]
+on_test = green[test_cases, 2:ncol(green)]
+
+#without interactions
+lm_ajjarapu = lm(Rent ~ ., data=on_train)
+
+# Predictions out of sample + convert to binary
+y_test = predict(lm_ajjarapu, on_test)
+
+ggplot() +
+  geom_point(data=on_test,aes(x = Rent, y = y_test ), color="black") + 
+  geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
+  xlab("actual price") + 
+  ylab("predicted price") + 
+  ggtitle("Actual Price vs Predicted Price for Linear Model without Interactions")
 
 ```
 
 ```{r green_lm_plot2, echo=FALSE, comment=NA}
+#with interactions
+lm_ajjarapu_2 = lm(Rent ~ .^2, data=on_train)
+y_test_2 = predict(lm_ajjarapu_2, on_test)
+ggplot() +
+  geom_point(data=on_test,aes(x = Rent, y = y_test_2 ), color="black") + 
+  geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
+  xlab("actual price") + 
+  ylab("predicted price") + 
+  ggtitle("Actual Price vs Predicted Price for Linear Model with Interactions")
+
+
 
 ```
 
@@ -99,16 +127,14 @@ cat("LINEAR REGRESSION MODEL (with interactions) - RMSE:", lm_avg[2])
 
 ### KNN Model
 
-The second model we built was a KNN model. In order to identify the optimal value of $k$, we tested $k$ values from 2 - 50. From the RMSE plot below, we can see that the optimal value of $k$ is 46 because it has the lowest RMSE value (15.03).
-
-*TODO: insert plot *
+The second model we built was a KNN model. In order to identify the optimal value of $k$, we tested $k$ values from 2 - 50. From the RMSE plot below, we can see that the optimal value of $k$ is 46 because it has the lowest RMSE value (~15.03).
 
 ```{r green_knn, include=FALSE, comment=NA}
 k_vals = 2:k_limit
 knn_vals = matrix(0, k_limit - 1, 2)
 
-for (k_val in k_vals) {
-  rmse_vals_iter = do(num_splits)*{
+for (k_val in 3) {
+  rmse_vals_iter = do(2)*{
     
     # re-split into train and test cases with the same sample sizes
     train_cases = sample.int(n, n_train, replace=FALSE)
@@ -134,6 +160,7 @@ for (k_val in k_vals) {
     # Predictions out of sample + convert to binary
     yhat_test1_pred = knn_model$pred
     
+    #NOTE: RMSE might return error b/c of NAs in Xtrain_temp and Xtest_temp, look at fix in glmnet model   where I use na.pass and complete.cases() to remove any NAs in the start
     c(k_val,rmse(yhat_test1_pred, ytest))
   }
   rmse_vals_avg = colMeans(rmse_vals_iter)
@@ -156,6 +183,35 @@ cat("KNN ( k =",knn_rmse[1],") - RMSE:", knn_rmse[2])
 ```
 
 ```{r green_knn_plot1, echo=FALSE, comment=NA}
+# re-split into train and test cases with the same sample sizes
+train_cases = sample.int(n, n_train, replace=FALSE)
+test_cases = setdiff(1:n, train_cases)
+on_train = green[train_cases,2:ncol(green)]
+on_test = green[test_cases,2:ncol(green)]
+
+#create KNN model
+Xtrain_temp = model.matrix(Rent ~ . - 1, data = on_train)
+Xtest_temp = model.matrix(Rent ~ . - 1, data = on_test)
+
+ytrain = on_train$Rent
+ytest = on_test$Rent
+
+#standardize data
+scale_amount = apply(Xtrain_temp, 2, sd)
+Xtrain = scale(Xtrain_temp, scale=scale_amount)
+Xtest = scale(Xtest_temp, scale=scale_amount)
+
+#train k model
+knn_model = knn.reg(Xtrain, Xtest, ytrain, k=knn_rmse[1])
+
+# Predictions out of sample + convert to binary
+yhat_test1_pred = knn_model$pred
+ggplot() +
+  geom_point(data=data.frame(x = ytest, y = yhat_test1_pred),aes(x = x, y = y), color="black") + 
+  geom_line(data=data.frame(Rent = ytest),aes(x = Rent, y = Rent ), color="red") + 
+  xlab("actual price") + 
+  ylab("predicted price") + 
+  ggtitle("Actual Price vs Predicted Price for kNN Model")
 
 ```
 
@@ -202,11 +258,46 @@ cat("RIDGE REGRESSION - RMSE:", rr_model_avg[1])
 ```
 
 ```{r green_lasso_plot1, echo=FALSE, comment=NA}
+# re-split into train and test cases with the same sample sizes
+train_cases = sample.int(n, n_train, replace=FALSE)
+test_cases = setdiff(1:n, train_cases)
+on_train = green[train_cases,2:ncol(green)]
+on_test = green[test_cases,2:ncol(green)]
+
+temp_train = model.matrix.lm(Rent ~ . - 1, data = on_train, na.action=na.pass)
+temp_test = model.matrix.lm(Rent ~ . - 1, data = on_test, na.action=na.pass)
+x_train = temp_train[complete.cases(temp_train),]
+y_train = on_train$Rent[complete.cases(temp_train)]
+x_test = temp_test[complete.cases(temp_test),]
+y_test = on_test$Rent[complete.cases(temp_test)]
+
+# lasso regression
+cv_fit_l = cv.glmnet(x_train, y_train, family="gaussian", alpha = 1)
+# ridge regression
+cv_fit_r = cv.glmnet(x_train, y_train, family="gaussian", alpha = 0)
+
+opt_lambda_l = cv_fit_l$lambda.min
+opt_lambda_r = cv_fit_r$lambda.min
+
+y_pred_l = predict(cv_fit_l$glmnet.fit, s = opt_lambda_l, newx = x_test)
+y_pred_r = predict(cv_fit_r$glmnet.fit, s = opt_lambda_r, newx = x_test)
+
+ggplot() +
+  geom_point(data=data.frame(x = y_test, y = y_pred_l ),aes(x = x, y = y ), color="black") + 
+  geom_line(data=data.frame(Rent = y_test),aes(x = Rent, y = Rent), color="red") + 
+  xlab("actual price") + 
+  ylab("predicted price") + 
+  ggtitle("Actual Price vs Predicted Price for Lasso Regression")
 
 ```
 
 ```{r green_ridge_plot1, echo=FALSE, comment=NA}
-
+ggplot() +
+  geom_point(data=data.frame(x = y_test, y = y_pred_r ),aes(x = x, y = y ), color="black") + 
+  geom_line(data=data.frame(Rent = y_test),aes(x = Rent, y = Rent), color="red") + 
+  xlab("actual price") + 
+  ylab("predicted price") + 
+  ggtitle("Actual Price vs Predicted Price for Ridge Regression")
 ```
 
 \dotfill
@@ -239,24 +330,55 @@ cat("LOGISTIC REGRESSION (with interactions) - RMSE:", logm_vals[2])
 ```
 
 ```{r green_logit_plot1, echo=FALSE, comment=NA}
+# re-split into train and test cases with the same sample sizes
+train_cases = sample.int(n, n_train, replace=FALSE)
+test_cases = setdiff(1:n, train_cases)
+on_train = green[train_cases,2:ncol(green)]
+on_test = green[test_cases,2:ncol(green)]
 
+lm_ajjarapu = glm(Rent ~ ., data=on_train, family=gaussian, maxit = 100)
+lm_ajjarapu_2 = glm(Rent ~ .^2, data=on_train, family=gaussian, maxit = 100)
+
+# Predictions out of sample + convert to binary
+y_test = predict(lm_ajjarapu, on_test)
+y_test_2 = predict(lm_ajjarapu_2, on_test)
+
+ggplot() +
+  geom_point(data=on_test,aes(x = Rent, y = y_test ), color="black") + 
+  geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
+  xlab("actual price") + 
+  ylab("predicted price") + 
+  ggtitle("Actual Price vs Predicted Price for Logistic Model without Interactions")
 ```
 
 ```{r green_logit_plot2, echo=FALSE, comment=NA}
-
+ggplot() +
+  geom_point(data=on_test,aes(x = Rent, y = y_test_2 ), color="black") + 
+  geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
+  xlab("actual price") + 
+  ylab("predicted price") + 
+  ggtitle("Actual Price vs Predicted Price for Logistic Model with Interactions")
 ```
 
 \dotfill
 
 ## Results
 
-For each model, we ran 200 iterations of 80%/20% train/test splits, each with a random subset of data to run cross validation and get an averaged error value to prevent random splits from generating a extremely high or low error value.
+For each model, we ran 200 iterations of 80%/20% train/test splits, each with a random subset of data to run cross validation and get an averaged error value to prevent random splits from generating a extremely high or low error value. Although the `cv.gamlr()` has built in cross-validation, we decided to confirm it externally as it seemed the cross-validation aspect was used to determine the optimal lambda. 
 
-From the plots of each predicted model, we determined that the lasso and ridge prediction models performed the best in predicting rental price of the properties because they produced comparatively lower RMSE values. 
+From the plots of each predicted model, we determined that the lasso and ridge prediction models performed the best in predicting rental price of the properties because they produced comparatively lower RMSE values. This is inline with what we expected, as we knew that lasso and ridge were regularlized linear models, which meant they would perform better than a vanilla linear model. However, since kNN doesn't have a predetermined model shape and logistic regression is based on a log curve, we weren't exactly sure which would fit the model best. 
+
 
 ## Conclusion
 
+We conclude that the lasso regression prediction model functions best based on the different RMSE values that each model achieved. In order to quantify the average change in rental price, we have to look at the coefficients for the lasso regression model and determine the value for the "green rating" factor: 
 
+```{r coefficients_green_lr_model, echo=FALSE, comment=NA}
+coefficients = coef(cv_fit_l$glmnet.fit,s = cv_fit_l$lambda.min)
+print(coefficients)
+cat("Average change in rental price in regards to green rating ($): ")
+coefficients[13]
+```
 
 ******
 
