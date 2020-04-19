@@ -5,7 +5,7 @@ library(glmnet)
 
 
 # import data
-greenbuildings = read.csv('./data/greenbuildings.csv', header=TRUE)
+green = read.csv('./data/greenbuildings.csv', header=TRUE)
 
 # rmse function
 rmse = function(y, yhat) {
@@ -13,23 +13,23 @@ rmse = function(y, yhat) {
 }
 
 # variables that control how long the program takes to run
-num_splits = 100
-k_limit = 30
+num_splits = 50 #200
+k_limit = 50
 
 #model 1: linear regression model (RMSE)
 #80% training data, 20% test data
-n = nrow(greenbuildings)
+n = nrow(green)
 n_train = round(0.8*n)  # round to nearest integer
 n_test = n - n_train
 
-#100 different random splits
+#200 different random splits
 lm_vals = do(num_splits)*{
   
   # re-split into train and test cases with the same sample sizes
   train_cases = sample.int(n, n_train, replace=FALSE)
   test_cases = setdiff(1:n, train_cases)
-  on_train = greenbuildings[train_cases, 2:ncol(greenbuildings)]
-  on_test = greenbuildings[test_cases, 2:ncol(greenbuildings)]
+  on_train = green[train_cases, 2:ncol(green)]
+  on_test = green[test_cases, 2:ncol(green)]
   
   lm_ajjarapu = lm(Rent ~ ., data=on_train)
   lm_ajjarapu_2 = lm(Rent ~ .^2, data=on_train)
@@ -52,8 +52,8 @@ for (k_val in k_vals) {
     # re-split into train and test cases with the same sample sizes
     train_cases = sample.int(n, n_train, replace=FALSE)
     test_cases = setdiff(1:n, train_cases)
-    on_train = greenbuildings[train_cases,2:ncol(greenbuildings)]
-    on_test = greenbuildings[test_cases,2:ncol(greenbuildings)]
+    on_train = green[train_cases,2:ncol(green)]
+    on_test = green[test_cases,2:ncol(green)]
 
     #create KNN model
     Xtrain_temp = model.matrix(Rent ~ . - 1, data = on_train)
@@ -78,8 +78,14 @@ for (k_val in k_vals) {
   rmse_vals_avg = colMeans(rmse_vals_iter)
   knn_vals[k_val - 1,] = rmse_vals_avg
 }
-plot(knn_vals[,1], knn_vals[,2], ty = "l")
 knn_rmse = unname(knn_vals[which.min(knn_vals[,2]),])
+
+knn_vals_rmse <- data.frame(knn_vals)
+ggplot(data=knn_vals_rmse) +
+  geom_line(aes(x = X1, y = X2), color='red') +
+  ggtitle("RMSE for Each Value of K") +
+  xlab("K") +
+  ylab("RMSE")
 
 #model 3: lasso regression/ridge regression (RMSE)
 vals_lr_rr = do(num_splits)*{
@@ -87,8 +93,8 @@ vals_lr_rr = do(num_splits)*{
   # re-split into train and test cases with the same sample sizes
   train_cases = sample.int(n, n_train, replace=FALSE)
   test_cases = setdiff(1:n, train_cases)
-  on_train = greenbuildings[train_cases,2:ncol(greenbuildings)]
-  on_test = greenbuildings[test_cases,2:ncol(greenbuildings)]
+  on_train = green[train_cases,2:ncol(green)]
+  on_test = green[test_cases,2:ncol(green)]
   
   temp_train = model.matrix.lm(Rent ~ . - 1, data = on_train, na.action=na.pass)
   temp_test = model.matrix.lm(Rent ~ . - 1, data = on_test, na.action=na.pass)
@@ -97,29 +103,29 @@ vals_lr_rr = do(num_splits)*{
   x_test = temp_test[complete.cases(temp_test),]
   y_test = on_test$Rent[complete.cases(temp_test)]
   
-  # ridge regression
-  cv_fit_r = cv.glmnet(x_train, y_train, family="gaussian", alpha = 0)
   # lasso regression
   cv_fit_l = cv.glmnet(x_train, y_train, family="gaussian", alpha = 1)
+  # ridge regression
+  cv_fit_r = cv.glmnet(x_train, y_train, family="gaussian", alpha = 0)
   
-  opt_lambda_r = cv_fit_r$lambda.min
   opt_lambda_l = cv_fit_l$lambda.min
+  opt_lambda_r = cv_fit_r$lambda.min
    
-  y_pred_r = predict(cv_fit_r$glmnet.fit, s = opt_lambda_r, newx = x_test)
   y_pred_l = predict(cv_fit_l$glmnet.fit, s = opt_lambda_l, newx = x_test)
+  y_pred_r = predict(cv_fit_r$glmnet.fit, s = opt_lambda_r, newx = x_test)
   
-  c(rmse(y_pred_r, y_test), rmse(y_pred_l, y_test))
+  c(rmse(y_pred_l, y_test), rmse(y_pred_r, y_test))
 }
-lr_model_avg = min(vals_lr_rr[,2])
-rr_model_avg = min(vals_lr_rr[,1])
+lr_model_avg = min(vals_lr_rr[,1])
+rr_model_avg = min(vals_lr_rr[,2])
 
 #model 4: logistic regression
 vals_logm = do(num_splits)*{
   # re-split into train and test cases with the same sample sizes
   train_cases = sample.int(n, n_train, replace=FALSE)
   test_cases = setdiff(1:n, train_cases)
-  on_train = greenbuildings[train_cases,2:ncol(greenbuildings)]
-  on_test = greenbuildings[test_cases,2:ncol(greenbuildings)]
+  on_train = green[train_cases,2:ncol(green)]
+  on_test = green[test_cases,2:ncol(green)]
   
   lm_ajjarapu = glm(Rent ~ ., data=on_train, family=gaussian, maxit = 100)
   lm_ajjarapu_2 = glm(Rent ~ .^2, data=on_train, family=gaussian, maxit = 100)
@@ -138,14 +144,16 @@ logm_vals = unname(colMeans(vals_logm))
 # lines(glm(Rent ~ ., data=on_test, family=gaussian, maxit = 100)$fitted.values, ty = "l", col="blue")
 
 
-paste("MODEL SUCCESS: ")
-paste("1) LINEAR REGRESSION MODEL - no squared RMSE val: ", lm_avg[1], " squared RMSE val: ", lm_avg[2])
-paste("2) kNN - k=",knn_rmse[1]," RMSE val: ", knn_rmse[2])
-paste("3) LASSO REGRESSION - RMSE val: ", lr_model_avg[1])
-print("coefficients for lasso regression: ")
+cat("MODEL SUCCESS:")
+cat("1) LINEAR REGRESSION MODEL (without interactions) - RMSE:", lm_avg[1])
+cat("1) LINEAR REGRESSION MODEL (with interactions) - RMSE:", lm_avg[2])
+cat("2) KNN ( k =",knn_rmse[1],") - RMSE:", knn_rmse[2])
+cat("3) LASSO REGRESSION - RMSE:", lr_model_avg[1])
+print("coefficients for lasso regression:")
 print(coef(cv_fit_l$glmnet.fit,s = cv_fit_l$lambda.min))
-paste("3) RIDGE REGRESSION - RMSE val: ", rr_model_avg[1])
-print("coefficients for ridge regression: ")
+cat("3) RIDGE REGRESSION - RMSE:", rr_model_avg[1])
+print("coefficients for ridge regression:")
 print(coef(cv_fit_r$glmnet.fit,s = cv_fit_r$lambda.min))
-paste("5) LOGISTIC REGRESSION - no squared RMSE val: ", logm_vals[1], " squared RMSE val: ", logm_vals[2])
+cat("5) LOGISTIC REGRESSION (without interactions) - RMSE:", logm_vals[1])
+cat("5) LOGISTIC REGRESSION (with interactions) - RMSE:", logm_vals[2])
 
