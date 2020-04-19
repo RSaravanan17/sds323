@@ -159,6 +159,8 @@ cat("KNN ( k =",knn_rmse[1],") - RMSE:", knn_rmse[2])
 
 ```
 
+\dotfill
+
 ### Lasso and Ridge Regression Model
 
 ```{r green_lasso_ridge, include=FALSE, comment=NA}
@@ -207,6 +209,8 @@ cat("RIDGE REGRESSION - RMSE:", rr_model_avg[1])
 
 ```
 
+\dotfill
+
 ### Logistic Regression
 
 ```{r green_logit, include=FALSE, comment=NA}
@@ -241,6 +245,8 @@ cat("LOGISTIC REGRESSION (with interactions) - RMSE:", logm_vals[2])
 ```{r green_logit_plot2, echo=FALSE, comment=NA}
 
 ```
+
+\dotfill
 
 ## Results
 
