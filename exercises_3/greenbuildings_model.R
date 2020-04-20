@@ -17,7 +17,7 @@ rmse = function(y, yhat) {
 }
 
 # variables that control how long the program takes to run
-num_splits = 50 #200
+num_splits = 200
 k_limit = 50
 
 #model 1: linear regression model (RMSE)

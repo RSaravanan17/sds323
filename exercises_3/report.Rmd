@@ -2,7 +2,6 @@
 title: "SDS 323: Exercises 3 Report"
 author:
   - Nikhil Ajjarapu
-  - Nevyn Duarte
   - Rithvik Saravanan
 date: "April 20, 2020"
 output: pdf_document
@@ -43,7 +42,7 @@ In order to test which model would be best for this activity, we built 5 differe
 
 ### Linear Model
 
-The first model we built were two basic linear models. The first model included all of the features without interactions and the second model included all of the features with interactions. Even though lasso and ridge regression are improved versions of the linear model, we included these linear models as a benchmark. As the models involve multiple x-values, we decided to plot the actual price vs predicted price, and include a y=x line as a benchmark of what perfect fit would look like. 
+The first model we built were two basic linear models. The first model included all of the features without interactions and the second model included all of the features with interactions. Even though lasso and ridge regression are improved versions of the linear model, we included these linear models as a benchmark. As the models involve multiple $x$-values, we decided to plot the actual rent price vs. predicted rent price, and include the identity function ($y=x$) as a benchmark of what perfect fit would look like.
 
 ```{r green_lm, include=FALSE, comment=NA}
 # rmse function
@@ -82,12 +81,7 @@ lm_vals = do(num_splits)*{
 lm_avg = unname(colMeans(lm_vals))
 ```
 
-```{r green_lm_rmse, echo=FALSE, comment=NA}
-cat("LINEAR REGRESSION MODEL (without interactions) - RMSE:", lm_avg[1])
-cat("\nLINEAR REGRESSION MODEL (with interactions) - RMSE:", lm_avg[2])
-```
-
-```{r green_lm_plot1, echo=FALSE, comment=NA}
+```{r green_lm_plot1, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 train_cases = sample.int(n, n_train, replace=FALSE)
 test_cases = setdiff(1:n, train_cases)
 on_train = green[train_cases, 2:ncol(green)]
@@ -102,32 +96,33 @@ y_test = predict(lm_ajjarapu, on_test)
 ggplot() +
   geom_point(data=on_test,aes(x = Rent, y = y_test ), color="black") + 
   geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
-  xlab("actual price") + 
-  ylab("predicted price") + 
-  ggtitle("Actual Price vs Predicted Price for Linear Model without Interactions")
+  xlab("Actual Rent Price") + 
+  ylab("Predicted Rent Price") + 
+  ggtitle("Actual Rent vs. Predicted Rent for LM1")
 
-```
-
-```{r green_lm_plot2, echo=FALSE, comment=NA}
 #with interactions
 lm_ajjarapu_2 = lm(Rent ~ .^2, data=on_train)
 y_test_2 = predict(lm_ajjarapu_2, on_test)
 ggplot() +
   geom_point(data=on_test,aes(x = Rent, y = y_test_2 ), color="black") + 
   geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
-  xlab("actual price") + 
-  ylab("predicted price") + 
-  ggtitle("Actual Price vs Predicted Price for Linear Model with Interactions")
-
-
-
+  xlab("Actual Rent Price") + 
+  ylab("Predicted Rent Price") + 
+  ggtitle("Actual Rent vs. Predicted Rent for LM2")
 ```
+
+```{r green_lm_rmse, echo=FALSE, comment=NA}
+cat("LM1 = LINEAR REGRESSION MODEL (without interactions) - RMSE:", lm_avg[1])
+cat("LM2 = LINEAR REGRESSION MODEL (with interactions) - RMSE:", lm_avg[2])
+```
+
+These plots show that the linear regression performed reasonably well for the most part with the model excluding interactions performing slightly better, as evidenced by the lower RMSE value.
 
 \dotfill
 
 ### KNN Model
 
-The second model we built was a KNN model. In order to identify the optimal value of $k$, we tested $k$ values from 2 - 50. From the RMSE plot below, we can see that the optimal value of $k$ is 46 because it has the lowest RMSE value (~15.03).
+The second model we built was a KNN model. In order to identify the optimal value of $k$, we tested $k$ values from 2 - 50. From the RMSE plot below, we noted that the optimal value of $k$ is 2 because it has the lowest RMSE value (~8.76).
 
 ```{r green_knn, include=FALSE, comment=NA}
 k_vals = 2:k_limit
@@ -171,7 +166,7 @@ for (k_val in k_vals) {
 knn_rmse = unname(knn_vals[which.min(knn_vals[,2]),])
 ```
 
-```{r green_knn_rmse_plot, echo=FALSE, comment=NA}
+```{r green_knn_rmse_plot, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 knn_vals_rmse = data.frame(knn_vals)
 ggplot(data=knn_vals_rmse) +
   geom_line(aes(x = X1, y = X2), color='red') +
@@ -180,11 +175,9 @@ ggplot(data=knn_vals_rmse) +
   ylab("RMSE")
 ```
 
-```{r green_knn_rmse, echo=FALSE, comment=NA}
-cat("KNN ( k =",knn_rmse[1],") - RMSE:", knn_rmse[2])
-```
+Using this value of $k$, we again plotted actual rent price vs. predicted rent price.
 
-```{r green_knn_plot1, echo=FALSE, comment=NA}
+```{r green_knn_plot1, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 # re-split into train and test cases with the same sample sizes
 train_cases = sample.int(n, n_train, replace=FALSE)
 test_cases = setdiff(1:n, train_cases)
@@ -213,15 +206,22 @@ yhat_test1_pred = knn_model$pred
 ggplot() +
   geom_point(data=data.frame(x = ytest, y = yhat_test1_pred),aes(x = x, y = y), color="black") + 
   geom_line(data=data.frame(Rent = ytest),aes(x = Rent, y = Rent ), color="red") + 
-  xlab("actual price") + 
-  ylab("predicted price") + 
-  ggtitle("Actual Price vs Predicted Price for kNN Model")
-
+  xlab("Actual Rent Price") + 
+  ylab("Predicted Rent Price") + 
+  ggtitle("Actual Rent vs. Predicted Rent for KNN Model")
 ```
+
+```{r green_knn_rmse, echo=FALSE, comment=NA}
+cat("KNN ( k =",knn_rmse[1]," ) - RMSE:", knn_rmse[2])
+```
+
+The KNN model performed comparatively better than the linear regression models because it had a lower RMSE values.
 
 \dotfill
 
-### Lasso and Ridge Regression Model
+### Lasso and Ridge Regression Models
+
+The third model we build were lasso and ridge regression models. Below are plots of predicted rent price vs. actual rent price for both regressions.
 
 ```{r green_lasso_ridge, include=FALSE, comment=NA}
 vals_lr_rr = do(num_splits)*{
@@ -256,12 +256,7 @@ lr_model_avg = min(vals_lr_rr[,1])
 rr_model_avg = min(vals_lr_rr[,2])
 ```
 
-```{r green_lasso_ridge_rmse, echo=FALSE, comment=NA}
-cat("LASSO REGRESSION - RMSE:", lr_model_avg[1])
-cat("\nRIDGE REGRESSION - RMSE:", rr_model_avg[1])
-```
-
-```{r green_lasso_plot1, echo=FALSE, comment=NA}
+```{r green_lasso_ridge_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 # re-split into train and test cases with the same sample sizes
 train_cases = sample.int(n, n_train, replace=FALSE)
 test_cases = setdiff(1:n, train_cases)
@@ -289,24 +284,30 @@ y_pred_r = predict(cv_fit_r$glmnet.fit, s = opt_lambda_r, newx = x_test)
 ggplot() +
   geom_point(data=data.frame(x = y_test, y = as.numeric(unname(y_pred_l)) ),aes(x = x, y = y ), color="black") + 
   geom_line(data=data.frame(x = y_test, y = y_test),aes(x = x, y = y), color="red") + 
-  xlab("actual price") + 
-  ylab("predicted price") + 
-  ggtitle("Actual Price vs Predicted Price for Lasso Regression")
+  xlab("Actual Rent Price") + 
+  ylab("Predicted Rent Price") + 
+  ggtitle("Actual Rent vs. Predicted Rent for LR")
 
-```
-
-```{r green_ridge_plot1, echo=FALSE, comment=NA}
 ggplot() +
   geom_point(data=data.frame(x = y_test, y =as.numeric(unname(y_pred_r)) ),aes(x = x, y = y ), color="black") + 
   geom_line(data=data.frame(x = y_test, y = y_test),aes(x = x, y = y), color="red") + 
-  xlab("actual price") + 
-  ylab("predicted price") + 
-  ggtitle("Actual Price vs Predicted Price for Ridge Regression")
+  xlab("Actual Rent Price") + 
+  ylab("Predicted Rent Price") + 
+  ggtitle("Actual Rent vs. Predicted Rent for RR")
 ```
+
+```{r green_lasso_ridge_rmse, echo=FALSE, comment=NA}
+cat("LR = LASSO REGRESSION - RMSE:", lr_model_avg[1])
+cat("RR = RIDGE REGRESSION - RMSE:", rr_model_avg[1])
+```
+
+These regressions have produced the best RMSE values thus far, indicating that the predictions were more accurate than the previous models.
 
 \dotfill
 
 ### Logistic Regression
+
+The final model we ran was a logistic regression. Below, we have included plots of predicted rent price vs. actual rent price for logistic regression with and without interactions.
 
 ```{r green_logit, include=FALSE, comment=NA}
 vals_logm = do(num_splits)*{
@@ -328,12 +329,7 @@ vals_logm = do(num_splits)*{
 logm_vals = unname(colMeans(vals_logm))
 ```
 
-```{r green_logit_rmse, echo=FALSE, comment=NA}
-cat("LOGISTIC REGRESSION (without interactions) - RMSE:", logm_vals[1])
-cat("\nLOGISTIC REGRESSION (with interactions) - RMSE:", logm_vals[2])
-```
-
-```{r green_logit_plot1, echo=FALSE, comment=NA}
+```{r green_logit_plot1, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 # re-split into train and test cases with the same sample sizes
 train_cases = sample.int(n, n_train, replace=FALSE)
 test_cases = setdiff(1:n, train_cases)
@@ -350,19 +346,24 @@ y_test_2 = predict(lm_ajjarapu_2, on_test)
 ggplot() +
   geom_point(data=on_test,aes(x = Rent, y = y_test ), color="black") + 
   geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
-  xlab("actual price") + 
-  ylab("predicted price") + 
-  ggtitle("Actual Price vs Predicted Price for Logistic Model without Interactions")
-```
+  xlab("Actual Rent Price") + 
+  ylab("Predicted Rent Price") + 
+  ggtitle("Actual Rent vs. Predicted Rent for LOGIT1")
 
-```{r green_logit_plot2, echo=FALSE, comment=NA}
 ggplot() +
   geom_point(data=on_test,aes(x = Rent, y = y_test_2 ), color="black") + 
   geom_line(data=on_test,aes(x = Rent, y = Rent ), color="red") + 
-  xlab("actual price") + 
-  ylab("predicted price") + 
-  ggtitle("Actual Price vs Predicted Price for Logistic Model with Interactions")
+  xlab("Actual Rent Price") + 
+  ylab("Predicted Rent Price") + 
+  ggtitle("Actual Rent vs. Predicted Rent for LOGIT2")
 ```
+
+```{r green_logit_rmse, echo=FALSE, comment=NA}
+cat("LOGIT1 = LOGISTIC REGRESSION (without interactions) - RMSE:", logm_vals[1])
+cat("LOGIT2 = LOGISTIC REGRESSION (with interactions) - RMSE:", logm_vals[2])
+```
+
+The RMSE values for the logistic regression are slightly higher than the previous models.
 
 \dotfill
 
@@ -370,8 +371,7 @@ ggplot() +
 
 For each model, we ran 200 iterations of 80%/20% train/test splits, each with a random subset of data to run cross validation and get an averaged error value to prevent random splits from generating a extremely high or low error value. Although the `cv.gamlr()` has built in cross-validation, we decided to confirm it externally as it seemed the cross-validation aspect was used to determine the optimal lambda. 
 
-From the plots of each predicted model, we determined that the lasso and ridge prediction models performed the best in predicting rental price of the properties because they produced comparatively lower RMSE values. This is inline with what we expected, as we knew that lasso and ridge were regularlized linear models, which meant they would perform better than a vanilla linear model. However, since kNN doesn't have a predetermined model shape and logistic regression is based on a log curve, we weren't exactly sure which would fit the model best. 
-
+From the plots of each predicted model, we determined that the lasso and ridge prediction models performed the best in predicting rental price of the properties because they produced comparatively lower RMSE values. This is inline with what we expected, as we knew that lasso and ridge were regularlized linear models, which meant they would perform better than a vanilla linear regression model. However, since KNN doesn't have a predetermined model shape and logistic regression is based on a log curve, we had to test out each type of model to determine which would produce the best fit.
 
 ## Conclusion
 
@@ -380,9 +380,10 @@ We conclude that the lasso regression prediction model functions best based on t
 ```{r coefficients_green_lr_model, echo=FALSE, comment=NA}
 coefficients = coef(cv_fit_l$glmnet.fit,s = cv_fit_l$lambda.min)
 print(coefficients)
-cat("Average change in rental price in regards to green rating ($): ")
-coefficients[13]
+cat("Average change in rental price in regards to green rating ($):", coefficients[13])
 ```
+
+From this, we determined that, holding other factors of the building constant, the average change in rental income per square foot associated with green certification is approximately $0.48.
 
 ******
 
@@ -393,7 +394,7 @@ coefficients[13]
 
 2. **How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.**
 
-```{r echo=FALSE, out.width='100%', fig.align = "center", comment=NA, warning=FALSE}
+```{r echo=FALSE, out.width='100%', fig.width = 8, fig.height = 5, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 knitr::include_graphics('./ex3table2.jpg')
 ```
 
@@ -405,7 +406,7 @@ knitr::include_graphics('./ex3table2.jpg')
 
 4. **Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?**
 
-```{r echo=FALSE, out.width='100%', fig.align = "center", comment=NA, warning=FALSE}
+```{r echo=FALSE, out.width='100%', fig.width = 8, fig.height = 5, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 knitr::include_graphics('./ex3table4.jpg')
 ```
 
@@ -415,7 +416,9 @@ knitr::include_graphics('./ex3table4.jpg')
 
 # Clustering and PCA
 
-To understand how useful PCA and clustering can be, we can turn to the data we have on wine. The dataset that we used for this exercise contains information on 11 chemical properties of 6500 different bottles of *vinho verde* wine from northern Portugal. This dataset also records two important features of each bottle of wine: the color (red or white) and quality (on a scale of 1-10 with 1 as low quality and 10 as high quality).
+## Overview
+
+To understand how useful PCA and clustering can be, we turn to the wine dataset. The dataset that we used for this exercise contains information on 11 chemical properties of 6500 different bottles of *vinho verde* wine from northern Portugal. This dataset also records two important features of each bottle of wine: the color (red or white) and quality (on a scale of 1-10 with 1 as low quality and 10 as high quality).
 
 ```{r wine_data, include=FALSE, comment=NA}
 summary(wine)
@@ -456,7 +459,7 @@ cat("\nStandard deviation of the data points in the dataset:", sigma)
 PCAwine = prcomp(X, scale=TRUE)
 ```
 
-A principal components analysis would be useful in this scenario because the wine dataset includes data on 11 chemical properties of each of the wine bottles. Since these 11 properties are numerical and continuous, we can attempt to explain the variation in the dataset by compressing the original 11 properties into fewer (and more manageable) values that could provide us better insight into the dataset as a whole.
+A principal components analysis would be useful in this scenario because the wine dataset includes data on 11 chemical properties of each of the wine bottles. Since these 11 properties are numerical and continuous, we attempted to explain the variation in the dataset by compressing the original 11 properties into fewer (and more manageable) values that could provide us with better insight into the dataset as a whole.
 
 &nbsp;
 
@@ -608,14 +611,14 @@ summary(lm_quality)
 #plot(color ~ fitted(lm_color), data=wine_features)
 ggplot(data = wine_features) +
   geom_boxplot(aes(x=color, y=fitted(lm_color))) +
-  ggtitle("Predicted Wine Colors from Principal Components") +
-  xlab("Actual Color of Wine") +
+  ggtitle("Pred. Wine Colors from Principal Components") +
+  xlab("Color of Wine") +
   ylab("Proportion of Prediction (1 = Red, 0 = White)")
 
 ggplot(data = wine_features) +
   geom_violin(aes(x=color, y=fitted(lm_color))) +
-  ggtitle("Predicted Wine Colors from Principal Components") +
-  xlab("Actual Color of Wine") +
+  ggtitle("Pred. Wine Colors from Principal Components") +
+  xlab("Color of Wine") +
   ylab("Proportion of Prediction (1 = Red, 0 = White)")
 ```
 
@@ -625,15 +628,15 @@ We assigned a value of 1 to red and 0 to white when running the logistic regress
 #plot(quality ~ fitted(lm_quality), data=wine_features)
 ggplot(data = wine_features) +
   geom_boxplot(aes(x=quality, y=fitted(lm_quality), group=quality)) +
-  ggtitle("Predicted Wine Quality from Principal Component Regression") +
-  xlab("Actual Quality of Wine") +
-  ylab("Predicted Quality of Wine")
+  ggtitle("Pred. Wine Quality from PC Regression") +
+  xlab("Quality of Wine") +
+  ylab("Pred. Quality of Wine")
 
 ggplot(data = wine_features) +
   geom_violin(aes(x=quality, y=fitted(lm_quality), group=quality)) +
-  ggtitle("Predicted Wine Quality from Principal Component Regression") +
-  xlab("Actual Quality of Wine") +
-  ylab("Predicted Quality of Wine")
+  ggtitle("Pred. Wine Quality from PC Regression") +
+  xlab("Quality of Wine") +
+  ylab("Pred. Quality of Wine")
 ```
 
 From the regression plots of predicted quality, we noticed that there is a positive, upward trend in the distributions with increasing quality. Since lower quality wines were predicted as relatively lower quality and higher quality wines were predicted as relatively higher quality, we recognized that this regression is useful in predicting general wine quality.
@@ -705,7 +708,7 @@ plot(wine_gap)
 wine_gap
 ```
 
-From this gap statistic plot, we can see that the function is non-increasing from $k=5$ to $k=6$. Thus, we initialized both of our algorithms with generating 5 clusters.
+From this gap statistic plot, we observed that the function is non-increasing from $k=5$ to $k=6$. Thus, we initialized both of our algorithms with generating 5 clusters.
 
 &nbsp;
 
@@ -746,7 +749,7 @@ for (i in 1:5) {
 }
 ```
 
-To get a rough idea of how this basic clustering algorithm performs, we can observe the accuracy of the clustering on some of the features.
+To get a rough idea of how this basic clustering algorithm performs, we attempted to observe the accuracy of the clustering on some of the properties from the dataset.
 
 ```{r wine_k_sample_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 # A few plots with cluster membership shown
@@ -764,7 +767,7 @@ It is important to note that K-means generates reasonable clusterings because ea
 &nbsp;
 
 
-To get a better visualization of the clusters, we can look at how well they group the two additional features: color and quality.
+To get a better visualization of the clusters, we observed how well they group the two additional features: color and quality.
 
 ```{r wine_k_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
 D_k = data.frame(wine, z = clust1$cluster)
@@ -786,7 +789,7 @@ ggplot(data = D_k[order(D_k$quality_cat), ]) +
   guides(fill=guide_legend(title="Quality"))
 ```
 
-These plots show a more descriptive explanation of the clusters. From the plot of red vs. white by cluster above, we can see that clusters 1 and 1 are predominantly red wines while clusters 3, 4, and 5 are predominantly white wines. Additionally, the plot of quality by cluster shows that clusters 2, 3, and 5 are roughly mid-quality wines while clusters 1 and 4 contain comparatively higher-quality wines.
+These plots show a more descriptive explanation of the clusters. From the plot of red vs. white by cluster above, we understood that clusters 1 and 1 are predominantly red wines while clusters 3, 4, and 5 are predominantly white wines. Additionally, the plot of quality by cluster shows that clusters 2, 3, and 5 are roughly mid-quality wines while clusters 1 and 4 contain comparatively higher-quality wines.
 
 &nbsp;
 
@@ -833,7 +836,7 @@ ggplot(data = D_kpp[order(D_kpp$quality_cat), ]) +
   guides(fill=guide_legend(title="Quality"))
 ```
 
-From the plot of red vs. white by cluster above, we can see that clusters 3 and 5 are predominantly red wines while clusters 1, 2, and 4 are predominantly white wines. Additionally, the plot of quality by cluster shows that clusters 1, 3, and 4 have mid-quality wines while clusters 2 and 5 are roughly higher-quality wines. This clusteirng algorithm shows slightly better groupings from the basic K-means apprach because each cluster is more distinct and can be grouped together more clearly, especially in terms of the quality groupings. To see if this improvement is reflected in the data, we observed the within-cluster and between-cluster average distances for the two clustering algorithms.
+From the plot of red vs. white by cluster above, we acknowledge that clusters 3 and 5 are predominantly red wines while clusters 1, 2, and 4 are predominantly white wines. Additionally, the plot of quality by cluster shows that clusters 1, 3, and 4 have mid-quality wines while clusters 2 and 5 are roughly higher-quality wines. This clusteirng algorithm shows slightly better groupings from the basic K-means apprach because each cluster is more distinct and can be grouped together more clearly, especially in terms of the quality groupings. To see if this improvement is reflected in the data, we observed the within-cluster and between-cluster average distances for the two clustering algorithms.
 
 ```{r wine_k_vs_kpp, echo=FALSE, comment=NA, warning=FALSE}
 # Compare versus within-cluster and between-cluster average distances
@@ -844,7 +847,7 @@ cat("\nK-means between-cluster distances:", clust1$betweenss)
 cat("K-means++ between-cluster distances:", clust2$betweenss)
 ```
 
-Since our value $k=5$ is relatively small, the distance within and between clusters between the K-means and K-means++ clustering algorithms is not very distinguishable. So, these measures are not the best way to convey that K-means++ is preferred over K-means for the wine dataset. Given this, we can see that the clusters from K-means++ show more understandable groupings than the clusters from K-means. Since the main goal of clustering is to cluster the data in a manner that makes it easy to interpret, we can acknowledge that K-means++ accomplishes this goal comparatively better for the wine dataset.
+Since our value $k=5$ is relatively small, the distance within and between clusters between the K-means and K-means++ clustering algorithms is not very distinguishable. So, these measures are not the best way to convey that K-means++ is preferred over K-means for the wine dataset. Given this, we acknowledge that the clusters from K-means++ show more understandable groupings than the clusters from K-means. Since the main goal of clustering is to cluster the data in a manner that makes it easy to interpret, we acknowledge that K-means++ accomplishes this goal comparatively better for the wine dataset.
 
 ## Hierarchical Clustering
 
@@ -1050,3 +1053,450 @@ We have determined that, for the wine dataset, using PCA to compress the origina
 ******
 
 # Market segmentation
+
+## Overview
+
+In this activity, we analyzed data from a market-research study using followers of the Twitter account of a large consumer brand NutrientH20. In order to allow NutrientH20 to hone its messaging a little more sharply, we examined the dataset and highlighted any noteworthy market segments in NutrientH20's social-media audience.
+
+## Data and Model
+
+This social marketing dataset contains counts of Tweets from a random anonyomous sample of the Twitter account's followers over a seven-day period in June 2014. Each Tweet was categorized based on its content using a pre-specified scheme of 36 different categories, each representing a broad area of interest (e.g. politics, sports, family, etc.) and the number of Tweets per anonymous user per category was stored in the social marketing dataset. Our goal in this activity was to identify any notable market segments that we observed in NutrientH20's social-media audience using a variety of dimensionality reduction and clustering techniques.
+
+## PCA
+
+A principal components analysis would be helpful for the dimensionality reduction of this data set because the 36 categories are not useful for interpretation as it is. Since the social marketing dataset contains only numerical, continous data for each category, performing a dimensionality reduction could provide us with better insight into the dataset as a whole.
+
+We scaled the Tweet data and ran a principal components analysis and generated 36 principal components (because the number of principal components is bound by the 36 categories in the dataset). The variance plot below for this PCA is shown below.
+
+```{r social, include=FALSE, comment=NA}
+# Center and scale the data
+S = social[,-1]
+S = scale(S, center=TRUE, scale=TRUE)
+
+# Extract the centers and scales from the rescaled data (which are named attributes)
+mu = attr(S,"scaled:center")
+sigma = attr(S,"scaled:scale")
+```
+
+```{r social_pca, include=FALSE, comment=NA}
+##### PCA #####
+
+# PCA of social marketing data
+PCAsocial = prcomp(S, scale=TRUE)
+```
+
+```{r social_pca_basic_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', comment=NA, warning=FALSE}
+## variance plot
+plot(PCAsocial)
+summary(PCAsocial)
+```
+
+Since the variance plot shows a clear and obvious decrease in the variance explained for each additional principal component, we can continue with the rest of the PCA. This is the baseline sanity check that each additional principal component attempts to explain the remaining unexplained data after taking into consideration the previous principal components.
+
+For this scenario, since there are a relatively large number of categories, we used the first five principal components which explain about 40% of the variance of the 36 categories in the dataset. We continued our analysis using these five components. Below are the coefficients for each of the 36 properties in each of the first 5 principal components.
+
+```{r social_rounded_PCs, echo=FALSE, comment=NA}
+# first five PCs
+rounded_PCs = round(PCAsocial$rotation[,1:5],2)  # first 5 PCs explain 40% of total variance
+rounded_PCs
+```
+
+From these coefficients, we understood that all categories are weighed negatively in PC1 which can be attributed to the large dataset and the variety of data points sampled. Of the coefficients for PC1, the most strongly negative categories included parenting, school, family, and religion. This market segment is relatively broad, but is likely to include millenials and young adults without children/families (no interest in parenting or school or family or religion).
+
+For PC2, we noticed an interesting association of the strongly positively weighed coefficents because they included the photo sharing, shopping, cooking, beauty, and fashion categories. These categories share the common underlying theme of activites typically attributed to females and models in our society. This is an noteworthy finding, and is an important starting point for understanding one potential market segment of NutrientH20's social-media audience. We also noticed that the sports fandom, family, and religion categories negatively weighed the PC2 score. This is logical because this market segment seems to include young females and models, who are not likely to post or be interested in sports, families, or religion.
+
+For PC3, we noticed the strongly positively weighed categories were health and nutrition and personal fitness. These categories share the common underlying theme of activities typically attributed to people interested in exercising and working out and taking care of their physical health. This is another potential market segment that we could understand further with more analyses. The negatively weighed categories for PC3 are mainly politics, news, and computers. This is reasonable because these categories represent different interests than mainly exercising and physical health.
+
+For PC4, we noticed the strongly positively weighed categories were online gaming and college/university. These categories share the common underlying theme of interests shared by teenage and young adult college students who play video games and are not interested in outdoor activites. This is yet another potential market segment that warrants further analysis. The negatively weighed categories for PC4 are primarily travel, health and nutrition, outdoors, and personal fitness. This follows from our initial understanding because these categories are very unlikely to be of interest to the gaming, indoorsy types.
+
+For PC5, we noticed the strongly positively weighed categories were TV/film, online gaming, college/university, sports playing and personal fitness. These categories seem to share some common ground with the market segment from PC4, but this segment seems to instead include college students who are interested in playing sports and video games (perhaps sports related video games such as NBA 2k or Madden). This is one more market segment that is worth further exploring. The negatively weighed categories are photo sharing, beauty, and fashion. This follows from our understanding because college students interested in sports are not likely to have interests in beauty or fashion.
+
+&nbsp;
+
+
+```{r social_merge_PCs, include=FALSE, comment=NA}
+# merge quality and color to PC1, PC2, and PC3
+social_features = social[,-1]
+social_features = merge(social_features, PCAsocial$x[,1:5], by="row.names")
+```
+
+To further verify the validity of our PCA, we ran a principal component regression to predict a few key categories. Below are the plots of predicted vs. actual distributions for a few categories from the social marketing dataset. We have included both boxplots and violin plots in order to provide a holistic visualization of the distribtions.
+
+```{r social_pca_regression, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+# principal component regression: predicting some features from dataset
+lm_chatter = lm(chatter ~ PC1 + PC2 + PC3 + PC4 + PC5, data=social_features)
+#summary(lm_chatter)
+
+ggplot(data = social_features) +
+  geom_boxplot(aes(x=chatter, y=fitted(lm_chatter), group=chatter)) +
+  ggtitle("Pred. Chatter Tweets from PC Regression") +
+  xlab("Chatter Tweets") +
+  ylab("Pred. Chatter Tweets")
+
+ggplot(data = social_features) +
+  geom_violin(aes(x=chatter, y=fitted(lm_chatter), group=chatter)) +
+  ggtitle("Pred. Chatter Tweets from PC Regression") +
+  xlab("Chatter Tweets") +
+  ylab("Pred. Chatter Tweets")
+
+lm_cooking = lm(cooking ~ PC1 + PC2 + PC3 + PC4 + PC5, data=social_features)
+#summary(lm_cooking)
+
+ggplot(data = social_features) +
+  geom_boxplot(aes(x=cooking, y=fitted(lm_cooking), group=cooking)) +
+  ggtitle("Pred. Cooking Tweets from PC Regression") +
+  xlab("Cooking Tweets") +
+  ylab("Pred. Cooking Tweets")
+
+ggplot(data = social_features) +
+  geom_violin(aes(x=cooking, y=fitted(lm_cooking), group=cooking)) +
+  ggtitle("Pred. Cooking Tweets from PC Regression") +
+  xlab("Cooking Tweets") +
+  ylab("Pred. Cooking Tweets")
+
+lm_fashion = lm(fashion ~ PC1 + PC2 + PC3 + PC4 + PC5, data=social_features)
+#summary(lm_fashion)
+
+ggplot(data = social_features) +
+  geom_boxplot(aes(x=fashion, y=fitted(lm_fashion), group=fashion)) +
+  ggtitle("Pred. Fashion Tweets from PC Regression") +
+  xlab("Fashion Tweets") +
+  ylab("Pred. Fashion Tweets")
+
+ggplot(data = social_features) +
+  geom_violin(aes(x=fashion, y=fitted(lm_fashion), group=fashion)) +
+  ggtitle("Pred. Fashion Tweets from PC Regression") +
+  xlab("Fashion Tweets") +
+  ylab("Pred. Fashion Tweets")
+
+lm_online_gaming = lm(online_gaming ~ PC1 + PC2 + PC3 + PC4 + PC5, data=social_features)
+#summary(lm_online_gaming)
+
+ggplot(data = social_features) +
+  geom_boxplot(aes(x=online_gaming, y=fitted(lm_online_gaming), group=online_gaming)) +
+  ggtitle("Pred. Online Gaming Tweets from PC Regression") +
+  xlab("Online Gaming Tweets") +
+  ylab("Pred. Online Gaming Tweets")
+
+ggplot(data = social_features) +
+  geom_violin(aes(x=online_gaming, y=fitted(lm_online_gaming), group=online_gaming)) +
+  ggtitle("Pred. Online Gaming Tweets from PC Regression") +
+  xlab("Online Gaming Tweets") +
+  ylab("Pred. Online Gaming Tweets")
+
+lm_college_uni = lm(college_uni ~ PC1 + PC2 + PC3 + PC4 + PC5, data=social_features)
+#summary(lm_college_uni)
+
+ggplot(data = social_features) +
+  geom_boxplot(aes(x=college_uni, y=fitted(lm_college_uni), group=college_uni)) +
+  ggtitle("Pred. College/University Tweets from PC Regression") +
+  xlab("College/University Tweets") +
+  ylab("Pred. College/University Tweets")
+
+ggplot(data = social_features) +
+  geom_violin(aes(x=college_uni, y=fitted(lm_college_uni), group=college_uni)) +
+  ggtitle("Pred. College/University Tweets from PC Regression") +
+  xlab("College/University Tweets") +
+  ylab("Pred. College/University Tweets")
+
+lm_sports_playing = lm(sports_playing ~ PC1 + PC2 + PC3 + PC4 + PC5, data=social_features)
+#summary(lm_sports_playing)
+
+ggplot(data = social_features) +
+  geom_boxplot(aes(x=sports_playing, y=fitted(lm_sports_playing), group=sports_playing)) +
+  ggtitle("Pred. Sports Playing Tweets from PC Regression") +
+  xlab("Sports Playing Tweets") +
+  ylab("Pred. Sports Playing Tweets")
+
+ggplot(data = social_features) +
+  geom_violin(aes(x=sports_playing, y=fitted(lm_sports_playing), group=sports_playing)) +
+  ggtitle("Pred. Sports Playing Tweets from PC Regression") +
+  xlab("Sports Playing Tweets") +
+  ylab("Pred. Sports Playing Tweets")
+```
+
+Since each of these plots is close to the identity function ($y=x$), our PCA components are a reliable compression of the original 36 categories in the dataset.
+
+&nbsp;
+
+
+## K-Means Clustering
+
+In addition to running the PCA on the social marketing dataset, we explored the utility of K-means and K-means++ clustering. In order to determine whether the market segments we discovered from the PCA were rational, we attempted to find any outstanding cluster that associated with one of the 5 principal components.
+
+```{r social_k, include=FALSE, comment=NA}
+##### K-means #####
+
+# Run k-means++ with 10 clusters and 100 starts
+while (TRUE) {
+  tryCatch({
+    clust1 = kmeans(S, 10, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+
+while (TRUE) {
+  tryCatch({
+    clust2 = kmeanspp(S, 10, nstart=100)
+    break
+  }, error = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  }, warning = function(w) {
+    cat("\n")
+    print(w)
+    cat("\n")
+  })
+}
+```
+
+The sizes of the clusters in each clustering method are shown below.
+
+```{r social_k_cluster_size, echo=FALSE, comment=NA}
+cat("Size of clusters with K-means clustering:", clust1$size)
+cat("Size of clusters with K-means++ clustering:", clust2$size)
+```
+
+From this, we decided to move forward in our analysis with the K-means++ clustering because it is an optimization of the K-means clustering technique by using better initial centroids. Also, K-means++ provided slightly more even cluster sizes.
+
+&nbsp;
+
+In order to determine whether any clusters stood out, we plotted pairs of categories from the dataset as violin plots to emphasize the distribution.
+
+```{r social_kpp_plot_travel, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+ggplot(data = social) +
+  geom_violin(aes(x = photo_sharing, y = travel, color=factor(clust2$cluster))) +
+  ggtitle("Photo Sharing & Travel by Cluster") +
+  xlab("Photo Sharing Tweets") +
+  ylab("Travel Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+```
+
+From the plot of photo sharing by travel, we noticed that cluster 5 (green) had a noticeably high volume of travel Tweets. This could represent a potential market segment that is interested in traveling and sharing photos of their travels.
+
+```{r social_kpp_plot_female, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+ggplot(data = social) +
+  geom_violin(aes(x = beauty, y = fashion, color=factor(clust2$cluster))) +
+  ggtitle("Beauty & Fashion by Cluster") +
+  xlab("Beauty Tweets") +
+  ylab("Fashion Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+
+ggplot(data = social) +
+  geom_violin(aes(x = cooking, y = shopping, color=factor(clust2$cluster))) +
+  ggtitle("Cooking & Shopping by Cluster") +
+  xlab("Cooking Tweets") +
+  ylab("Shopping Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+
+ggplot(data = social) +
+  geom_violin(aes(x = beauty, y = photo_sharing, color=factor(clust2$cluster))) +
+  ggtitle("Beauty & Photo Sharing by Cluster") +
+  xlab("Beauty Tweets") +
+  ylab("Photo Sharing Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+```
+
+From the plots of beauty, fashion, cooking, and shopping, we noticed that cluster 8 (purple) stood out in each plot. This further bolsters our understanding of the market segment discovered in PC2 above. The underlying theme of females and models who post a high volume of photos begins to strengthen from this clustering.
+
+```{r social_kpp_plot_sports_food, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+ggplot(data = social) +
+  geom_violin(aes(x = sports_playing, y = sports_fandom, color=factor(clust2$cluster))) +
+  ggtitle("Sports Playing & Sports Fandom by Cluster") +
+  xlab("Sports Playing Tweets") +
+  ylab("Sports Fandom Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+
+ggplot(data = social) +
+  geom_violin(aes(x = personal_fitness, y = health_nutrition, color=factor(clust2$cluster))) +
+  ggtitle("Personal Fitness & Health Nutrition by Cluster") +
+  xlab("Personal Fitness Tweets") +
+  ylab("Health Nutrition Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+
+ggplot(data = social) +
+  geom_violin(aes(x = family, y = food, color=factor(clust2$cluster))) +
+  ggtitle("Family & Food by Cluster") +
+  xlab("Family Tweets") +
+  ylab("Food Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+```
+
+From the plots of sports and family and food, we noted that clusters 7 (blue) and 9 (pink) were distinct. High volumes of Tweets in these categories indicates that this cluster is associated with the market segment discovered in PC3, which consisted of people interested in exercising, working out, and physical health.
+
+```{r social_kpp_plot_health, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+ggplot(data = social) +
+  geom_violin(aes(x = online_gaming, y = college_uni, color=factor(clust2$cluster))) +
+  ggtitle("Online Gaming & College/University by Cluster") +
+  xlab("Online Gaming Tweets") +
+  ylab("College/University Tweets") +
+  guides(color=guide_legend(title="Cluster"))
+```
+
+From the plot of online gaming and college/university, we observed that cluster 6 (teal) was very unique. High volumes of Tweets in these categories follow closely with the market segment discovered in PC4 and PC5, which included college students interested in different types of video games.
+
+&nbsp;
+
+
+## Hierarchical Clustering
+
+To further flush out our understanding of these market segments we ran hierarchical clustering on the social marketing dataset with 15 clusters.
+
+```{r social_hier_complete, include=FALSE, comment=NA}
+##### Hierarchical clustering #####
+
+# Form a pairwise distance matrix using the dist function
+social_dist_matrix = dist(S, method='euclidean')
+```
+
+We explored each type of linkage for hierarchical clustering: single, complete, average, and centroid. Below are the cluster sizes for each type of linkage.
+
+```{r social_hier_sizes, echo=FALSE, comment=NA}
+# Single linkage
+hier_social_single = hclust(social_dist_matrix, method='single')
+#plot(hier_social_single, cex=0.8)  # Plot the dendrogram
+
+hier_social_cluster1_single = cutree(hier_social_single, k=15)  # Cut the trees into 15 clusters
+cat("Singe linkage cluster sizes:", summary(factor(hier_social_cluster1_single)))
+
+# Complete linkage
+hier_social_complete = hclust(social_dist_matrix, method='complete')
+#plot(hier_social_complete, cex=0.8)  # Plot the dendrogram
+
+hier_social_cluster1_complete = cutree(hier_social_complete, k=15)  # Cut the trees into 15 clusters
+cat("Complete linkage cluster sizes:", summary(factor(hier_social_cluster1_complete)))
+
+# Average linkage
+hier_social_average = hclust(social_dist_matrix, method='average')
+#plot(hier_social_average, cex=0.8)  # Plot the dendrogram
+
+hier_social_cluster1_average = cutree(hier_social_average, k=15)  # Cut the trees into 15 clusters
+cat("Average linkage cluster sizes:", summary(factor(hier_social_cluster1_average)))
+
+# Centroid linkage
+hier_social_centroid = hclust(social_dist_matrix, method='centroid')
+#plot(hier_social_centroid, cex=0.8)  # Plot the dendrogram
+
+hier_social_cluster1_centroid = cutree(hier_social_centroid, k=15)  # Cut the trees into 15 clusters
+cat("Centroid linkage cluster sizes:", summary(factor(hier_social_cluster1_centroid)))
+```
+
+From this, we determined that complete linkage provided us the most balanced sizes for the 15 clusters.
+
+**Complete linakge**
+
+Using hierarchical clustering with complete linkage, we plotted the proportion of the number of Tweets in each cluster for a variety of useful categories from the social marketing dataset. We intended to observe whether any of the clusters in this method provided us further insight to verify the market segments that we have found in the above methods.
+
+The following plots show the proportion of the number of Tweets in each cluster for the photo sharing, cooking, fashion, and beauty categories.
+
+```{r social_hier_plot_female, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+D_complete_social = data.frame(social, z = hier_social_cluster1_complete)
+
+ggplot(data = D_complete_social[order(D_complete_social$photo_sharing), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = photo_sharing), position="fill", stat='identity') +
+  ggtitle("Proportion of Photo Sharing by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Photo Sharing Tweets") +
+  guides(fill=guide_legend(title="Photo Sharing"))
+
+ggplot(data = D_complete_social[order(D_complete_social$cooking), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = cooking), position="fill", stat='identity') +
+  ggtitle("Proportion of Cooking by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Cooking Tweets") +
+  guides(fill=guide_legend(title="Cooking"))
+
+ggplot(data = D_complete_social[order(D_complete_social$fashion), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = fashion), position="fill", stat='identity') +
+  ggtitle("Proportion of Fashion by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Fashion Tweets") +
+  guides(fill=guide_legend(title="Fashion"))
+
+ggplot(data = D_complete_social[order(D_complete_social$beauty), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = beauty), position="fill", stat='identity') +
+  ggtitle("Proportion of Beauty by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Beauty Tweets") +
+  guides(fill=guide_legend(title="Beauty"))
+```
+
+One commonality that we found was in cluster 9. These plots show a noticeably high proportion of high numbers of photo sharing, cooking, fashion, and beauty Tweets in cluster 9 (the cluster whose bar is a significantly lighter shade). This follows our understanding of the distinct grouping associated with PC2 because we had established that PC2 had a strong association with young females and models interested in beauty, fashion, and posting photos.
+
+&nbsp;
+
+
+The following plots show the proportion of the number of Tweets in each cluster for the online gaming and college/university categories.
+
+```{r social_hier_plot_college, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+ggplot(data = D_complete_social[order(D_complete_social$online_gaming), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = online_gaming), position="fill", stat='identity') +
+  ggtitle("Proportion of Online Gaming by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Online Gaming Tweets") +
+  guides(fill=guide_legend(title="Online Gaming"))
+
+ggplot(data = D_complete_social[order(D_complete_social$college_uni), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = college_uni), position="fill", stat='identity') +
+  ggtitle("Proportion of College/University by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of College/University Tweets") +
+  guides(fill=guide_legend(title="College/University"))
+```
+
+Another commonality that we found was in cluster 10. These plots show a noticeably high proportion of high numbers of online gaming and college/university Tweets in cluster 10 (the cluster whose bar is a significantly lighter shade). This follows our understanding of the distinct groupings associated with PC4 and PC5 because we had established that these components had a strong association with college and playing video games. Since this grouping involves activites associated with teenagers and young adults, we have solidified our insight into this market segment.
+
+&nbsp;
+
+
+The following plots show the proportion of the number of Tweets in each cluster for the health and nutrition and personal fitness categories.
+
+```{r social_hier_complete_plots, echo=FALSE, fig.width = 5, fig.height = 3, fig.align='center', out.width='.49\\linewidth', fig.show='hold', comment=NA, warning=FALSE}
+#which(hier_social_cluster1_complete == 1)  # Examine the cluster members
+
+D_complete_social = data.frame(social, z = hier_social_cluster1_complete)
+
+# plot proportion of chatter by cluster
+ggplot(data = D_complete_social[order(D_complete_social$health_nutrition), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = health_nutrition), position="fill", stat='identity') +
+  ggtitle("Proportion of Health/Nutrition Tweets by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Health/Nutrition Tweets") +
+  guides(fill=guide_legend(title="Health/Nutrition"))
+
+ggplot(data = D_complete_social[order(D_complete_social$personal_fitness), ]) + 
+  geom_bar(mapping = aes(x = z, y = 100, fill = personal_fitness), position="fill", stat='identity') +
+  ggtitle("Proportion of Personal Fitness by Cluster") +
+  xlab("Cluster") +
+  ylab("Proportion of Personal Fitness Tweets") +
+  guides(fill=guide_legend(title="Personal Fitness"))
+```
+
+A third commonality that we found was in cluster 1. These plots show a noticeably high proportion of high numbers of health and nutrition and personal fitness Tweets in cluster 1 (the cluster whose bar is a significantly lighter shade). This follows our understanding of the distinct groupings associated with PC3 because we had established that PC3 had a strong association with exercising, fitness, and physical health. Since this grouping involves activities that require exercise and physical health, we solidified our insight into this grouping.
+
+
+## Conclusion
+
+After conducting a PCA, K-means and K-means++ clustering, and hierarchical clustering with complete linakge, we have determined that there exist a few unique market segments in NutrientH20's social-media audience.
+
+One market segment is young females and models who are interested in beauty, cooking, fashion, and shopping. These individuals are not particularly interested in sports, religion, or school. The best way to appeal to this group would be to include advertisements and promotions that express beauty and fashion.
+
+Another market segment is individuals who are interested in personal fitness and health and nutrition. These individuals are not particularly interested in politics, news, or computers. The best way to appeal to this group would be to include advertisements and promotions that involve exercising and personal/physical health through working out and proper nutrition.
+
+Another market segment is individuals who are college students (teenagers and young adults) who are interested in video games. The best way to appeal to this group would be to include advertisements and promotions that involve cheap deals (because college students run on a tight budget) and possibly games.
+
+Using these dimensionality reduction and clustering techniques, we were able to reduce the original 36 categories of Tweets into a more manageable set of variables that allowed us to extract distinctive market segments in NutrientH20's social-media audience.
+
+
+
+
+
