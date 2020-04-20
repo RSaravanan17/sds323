@@ -133,8 +133,8 @@ The second model we built was a KNN model. In order to identify the optimal valu
 k_vals = 2:k_limit
 knn_vals = matrix(0, k_limit - 1, 2)
 
-for (k_val in 3) {
-  rmse_vals_iter = do(2)*{
+for (k_val in k_vals) {
+  rmse_vals_iter = do(num_splits)*{
     
     # re-split into train and test cases with the same sample sizes
     train_cases = sample.int(n, n_train, replace=FALSE)
@@ -143,11 +143,13 @@ for (k_val in 3) {
     on_test = green[test_cases,2:ncol(green)]
 
     #create KNN model
-    Xtrain_temp = model.matrix(Rent ~ . - 1, data = on_train)
-    Xtest_temp = model.matrix(Rent ~ . - 1, data = on_test)
+    train_temp = model.matrix.lm(Rent ~ . - 1, data = on_train, na.action = na.pass)
+    test_temp = model.matrix.lm(Rent ~ . - 1, data = on_test, na.action = na.pass)
+    Xtrain_temp = train_temp[complete.cases(train_temp),]
+    Xtest_temp = test_temp[complete.cases(test_temp),]
     
-    ytrain = on_train$Rent
-    ytest = on_test$Rent
+    ytrain = on_train$Rent[complete.cases(train_temp)]
+    ytest = on_test$Rent[complete.cases(test_temp)]
     
     #standardize data
     scale_amount = apply(Xtrain_temp, 2, sd)
@@ -170,7 +172,7 @@ knn_rmse = unname(knn_vals[which.min(knn_vals[,2]),])
 ```
 
 ```{r green_knn_rmse_plot, echo=FALSE, comment=NA}
-knn_vals_rmse <- data.frame(knn_vals)
+knn_vals_rmse = data.frame(knn_vals)
 ggplot(data=knn_vals_rmse) +
   geom_line(aes(x = X1, y = X2), color='red') +
   ggtitle("RMSE for Each Value of K") +
@@ -190,11 +192,13 @@ on_train = green[train_cases,2:ncol(green)]
 on_test = green[test_cases,2:ncol(green)]
 
 #create KNN model
-Xtrain_temp = model.matrix(Rent ~ . - 1, data = on_train)
-Xtest_temp = model.matrix(Rent ~ . - 1, data = on_test)
+train_temp = model.matrix.lm(Rent ~ . - 1, data = on_train, na.action = na.pass)
+test_temp = model.matrix.lm(Rent ~ . - 1, data = on_test, na.action = na.pass)
+Xtrain_temp = train_temp[complete.cases(train_temp),]
+Xtest_temp = test_temp[complete.cases(test_temp),]
 
-ytrain = on_train$Rent
-ytest = on_test$Rent
+ytrain = on_train$Rent[complete.cases(train_temp)]
+ytest = on_test$Rent[complete.cases(test_temp)]
 
 #standardize data
 scale_amount = apply(Xtrain_temp, 2, sd)
@@ -202,7 +206,7 @@ Xtrain = scale(Xtrain_temp, scale=scale_amount)
 Xtest = scale(Xtest_temp, scale=scale_amount)
 
 #train k model
-knn_model = knn.reg(Xtrain, Xtest, ytrain, k=knn_rmse[1])
+knn_model = knn.reg(Xtrain, Xtest, ytrain, k=k_val)
 
 # Predictions out of sample + convert to binary
 yhat_test1_pred = knn_model$pred
@@ -254,7 +258,7 @@ rr_model_avg = min(vals_lr_rr[,2])
 
 ```{r green_lasso_ridge_rmse, echo=FALSE, comment=NA}
 cat("LASSO REGRESSION - RMSE:", lr_model_avg[1])
-cat("RIDGE REGRESSION - RMSE:", rr_model_avg[1])
+cat("\nRIDGE REGRESSION - RMSE:", rr_model_avg[1])
 ```
 
 ```{r green_lasso_plot1, echo=FALSE, comment=NA}
@@ -283,8 +287,8 @@ y_pred_l = predict(cv_fit_l$glmnet.fit, s = opt_lambda_l, newx = x_test)
 y_pred_r = predict(cv_fit_r$glmnet.fit, s = opt_lambda_r, newx = x_test)
 
 ggplot() +
-  geom_point(data=data.frame(x = y_test, y = y_pred_l ),aes(x = x, y = y ), color="black") + 
-  geom_line(data=data.frame(Rent = y_test),aes(x = Rent, y = Rent), color="red") + 
+  geom_point(data=data.frame(x = y_test, y = as.numeric(unname(y_pred_l)) ),aes(x = x, y = y ), color="black") + 
+  geom_line(data=data.frame(x = y_test, y = y_test),aes(x = x, y = y), color="red") + 
   xlab("actual price") + 
   ylab("predicted price") + 
   ggtitle("Actual Price vs Predicted Price for Lasso Regression")
@@ -293,8 +297,8 @@ ggplot() +
 
 ```{r green_ridge_plot1, echo=FALSE, comment=NA}
 ggplot() +
-  geom_point(data=data.frame(x = y_test, y = y_pred_r ),aes(x = x, y = y ), color="black") + 
-  geom_line(data=data.frame(Rent = y_test),aes(x = Rent, y = Rent), color="red") + 
+  geom_point(data=data.frame(x = y_test, y =as.numeric(unname(y_pred_r)) ),aes(x = x, y = y ), color="black") + 
+  geom_line(data=data.frame(x = y_test, y = y_test),aes(x = x, y = y), color="red") + 
   xlab("actual price") + 
   ylab("predicted price") + 
   ggtitle("Actual Price vs Predicted Price for Ridge Regression")
@@ -326,7 +330,7 @@ logm_vals = unname(colMeans(vals_logm))
 
 ```{r green_logit_rmse, echo=FALSE, comment=NA}
 cat("LOGISTIC REGRESSION (without interactions) - RMSE:", logm_vals[1])
-cat("LOGISTIC REGRESSION (with interactions) - RMSE:", logm_vals[2])
+cat("\nLOGISTIC REGRESSION (with interactions) - RMSE:", logm_vals[2])
 ```
 
 ```{r green_logit_plot1, echo=FALSE, comment=NA}

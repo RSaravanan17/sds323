@@ -1,4 +1,8 @@
+library(ggplot2)
+library(LICORS)  # for kmeans++
+library(foreach)
 library(mosaic)
+library(cluster)
 library(tidyverse)
 library(FNN)
 library(glmnet)
